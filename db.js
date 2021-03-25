@@ -1,6 +1,8 @@
 const { Client }    = require('pg')
 const axios = require('axios')
 const https = require('https')
+const fs = require('fs')
+const moment = require('moment')
 
 // Later change this to just update the DB instead of delete and replace
 const addToDB = async (tableName, columns, getDataResponse) => {
@@ -23,7 +25,13 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     throw error
   }
 
-  const columnsAndTypes = `${columns.join(' VARCHAR, ')} VARCHAR`
+  let columnsAndTypes
+
+  if (tableName === 'pki_events') {
+    columnsAndTypes = `${columns.join(' VARCHAR, ')} VARCHAR`
+  } else if (tableName === 'radar') {
+    columnsAndTypes = `SHIP_NAME VARCHAR, PING VARCHAR, RESULT VARCHAR, RESPONSE VARCHAR`
+  }
 
   try {
     const createTableResponse = await client
@@ -33,16 +41,45 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     throw error
   }
 
-  let query = `INSERT INTO ${tableName} (${columns[0]}, ${columns[1]}, ${columns[2]}, ${columns[3]}, ${columns[4]}, ${columns[5]}) VALUES`
+  let query
 
-  for (let i in getDataResponse) {
-    if (i > 0) {
-      query += `,`
+  if (tableName === 'pki_events') {
+    query = `INSERT INTO ${tableName} (${columns[0]}, ${columns[1]}, ${columns[2]}, ${columns[3]}, ${columns[4]}, ${columns[5]}) VALUES`
+
+    for (let i in getDataResponse) {
+      if (i > 0) {
+        query += `,`
+      }
+      query += ` ('${getDataResponse[i][0] || null}', '${getDataResponse[i][1] || null}', '${getDataResponse[i][2] || null}', '${getDataResponse[i][3] || null}', '${getDataResponse[i][4] || null}', '${getDataResponse[i][5] || null}')`
     }
-    query += ` ('${getDataResponse[i][0] || null}', '${getDataResponse[i][1] || null}', '${getDataResponse[i][2] || null}', '${getDataResponse[i][3] || null}', '${getDataResponse[i][4] || null}', '${getDataResponse[i][5] || null}')`
+
+    query += ';'
+  } else if (tableName === 'radar') {
+
+    query = `INSERT INTO ${tableName} (SHIP_NAME, PING, RESULT, RESPONSE) VALUES`
+    const ships = Object.keys(getDataResponse)
+
+    for (let i in ships) {
+      if (i > 0) {
+        query += `,`
+      }
+
+      if (getDataResponse[ships[i]].length === 0) {
+        query += ` ('${ships[i] || null}', '-1', '-1', '-1')`
+      } else {
+        for (let j in getDataResponse[ships[i]]) {
+          if (j > 0) {
+            query += `,`
+          }
+          query += ` ('${ships[i] || null}', '${getDataResponse[ships[i]][j]['ping'] || -1}', '${getDataResponse[ships[i]][j]['result'] || -1}', '${getDataResponse[ships[i]][j]['response'] || -1}')`
+        }
+      }
+    }
+
+    query += ';'
   }
 
-  query += ';'
+  
 
   try {
 
@@ -65,12 +102,26 @@ const addToDB = async (tableName, columns, getDataResponse) => {
   } 
 }
 
-// const populateRadar = async () => {
-//   const getDataResponse = await axios.get('http://35.247.74.19:8080/~radar.json')
-//   addToDB('RADAR', getDataResponse)
-// }
+const populateRadar = async () => {
+  const agent = new https.Agent({  
+    rejectUnauthorized: false
+   })
+  let events
+  try {
+    // The following can be used to test against the radar fixture in case the endpoint is down
+    // Will need to copy in the fixture, which Chris has but which is not committed due to file size
+    // events = JSON.parse(fs.readFileSync('_radar.json', 'utf8'))
 
-const getPKIEvents = async () => {
+    events = await axios.get('http://35.247.74.19:8080/~radar.json', { httpsAgent: agent })
+    events = events.data
+  } catch (error) {
+    throw error
+  }
+  await addToDB('radar', null, events)
+  return true
+}
+
+const populatePKIEvents = async () => {
   const agent = new https.Agent({  
     rejectUnauthorized: false
    })
@@ -96,6 +147,36 @@ const getPKIEvents = async () => {
 
   events = events.slice(events.indexOf('~')).split('\n')
 
+  // Dates are in the following format
+  // ~2021.3.24..21.28.47
+  // ~YYYY.M.DD..HH.MM.SS or ~YYYY.MM.DD..HH.MM.SS
+  // moment().format('MMMM Do YYYY, h:mm:ss a')
+  const convertDateForMoment = dateToConvert => {
+    // console.log("🚀 ~ file: db.js ~ line 155 ~ populatePKIEvents ~ dateToConvert", dateToConvert)
+    let manipString = dateToConvert.slice(1)
+    // console.log("🚀 ~ file: api.js ~ line 132 ~ getPKIEvents ~ manipString", manipString)
+    manipString = manipString.split('..')
+    // console.log("🚀 ~ file: api.js ~ line 134 ~ getPKIEvents ~ manipString", manipString)
+    // manipString[0] = manipString[0].replace(/\./g, '-')
+
+    // console.log("🚀 ~ file: api.js ~ line 136 ~ getPKIEvents ~ manipString[0]", manipString[0])
+    // const found0 = manipString[0].match(/(?<=\-)(.*?)(?=\-)/)
+    // if (found0[0] == found0[1]) {
+    //   manipString[0].slice()
+    // }
+    // console.log("🚀 ~ file: api.js ~ line 137 ~ getPKIEvents ~ found", found)
+    // if (manipString[0]s
+
+    // console.log("🚀 ~ file: api.js ~ line 147 ~ getPKIEvents ~ manipString[0]", manipString[0])
+    manipString[1] = manipString[1].replace(/\./g, ':')
+    // console.log("🚀 ~ file: api.js ~ line 136 ~ getPKIEvents ~ manipString[1]", manipString[1])
+    manipString = manipString.join(' ')
+    manipString = manipString.replace(/\-/g, '.')
+    // manipString = manipString.join('T')
+    // console.log("🚀 ~ file: api.js ~ line 134 ~ getPKIEvents ~ manipString", manipString)
+    return manipString
+  }
+
   for (let i in events) {
     let splitString = events[i]
     let splitStringArray = splitString.split(',')
@@ -103,7 +184,22 @@ const getPKIEvents = async () => {
       splitStringArray.pop()
     }
     events[i] = splitStringArray
+
+    if (i === '0') {
+      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i]", events[i])
+      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i][0]", events[i][0])
+    }
+    
+    // events[i] = events[i].split(',')
+    events[i][0] = convertDateForMoment(events[i][0])
+
+    if (i === '0') {
+      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i]", events[i])
+      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i][0]", events[i][0])
+    }
   }
+
+  console.log(`events[0]: ${events[0]}`)
   
   try {
     await addToDB('pki_events', columns, events)
@@ -118,9 +214,8 @@ const getPKIEvents = async () => {
 
 
 const dbResolvers = {
-  // getDB: () => connectToDB(),
-  // populateRadar: () => populateRadar(),
-  getPKIEvents: () => getPKIEvents()
+  populateRadar: () => populateRadar(),
+  populatePKIEvents: () => populatePKIEvents()
 }
 
 module.exports = dbResolvers

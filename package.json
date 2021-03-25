@@ -10,6 +10,7 @@
     "axios": "^0.21.1",
     "azimuth-js": "^0.21.0",
     "graphql": "^15.5.0",
+    "moment": "^2.29.1",
     "node-cron": "^3.0.0",
     "pg": "^8.5.1",
     "ssl-root-cas": "^1.3.1",

@@ -20,7 +20,7 @@ query {
   getDB
   getNode
   getNodes
-  getPKIEvents
+  populatePKIEvents
   getActivity
 }
 ```

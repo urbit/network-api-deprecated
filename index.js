@@ -1,9 +1,10 @@
 const { ApolloServer, gql }   = require('apollo-server')
 const dbResolvers             = require('./db')
-// const apiResolvers            = require('./api')
+const apiResolvers            = require('./api')
 
 const typeDefs = gql`
   
+  # Please completely ignore the commented out code below. It's just sandbox stuff to note for myself right now, will remove as needed later
   # Which of the following values do we want to be required?
   # type Node {
   #   urbit_id: String!
@@ -19,60 +20,73 @@ const typeDefs = gql`
   #   proxy_addresses: [String]
   # }
 
+  # Later set up scalar according to this process: https://www.apollographql.com/docs/apollo-server/schema/custom-scalars/
   # scalar Timestamp
 
-  # enum NodeType {
-  #   GALAXY
-  #   STAR
-    # PLANET
+  enum NodeType {
+    GALAXY
+    STAR
+    PLANET
     # MOON
     # COMET
-  # }
+  }
 
-  # type PKIEvent {
-  #   urbit_id: String
-  #   # since: Timestamp
-  #   since: String
-  #   node_types: [NodeType]
-  #   limit: Int!
-  #   offset: Int!
-  # }
+  # These are what get passed into get-pki-events
+  input PKIEventInput {
+    urbitId: String
+    # since: Timestamp
+    since: String
+    nodeTypes: [NodeType]
+    # limit: Int!
+    # offset: Int!
+    limit: Int
+    offset: Int
+  }
 
-  # type PKIEvent {
-  #   date: String
-  #   point: String
-  #   event: String
-  #   field1: String
-  #   field2: String
-  #   field3: String
-  # }
+  type PKIEvent {
+    date: String
+    point: String
+    event: String
+    field1: String
+    field2: String
+    field3: String
+  }
   
+  # Need to split into populatePKIEvents (call endpoint) and populatePKIEvents (send radar data from DB to UI). Currently populatePKIEvents is actually doing what populatePKIEvents will do
   type Query {
-    # getDB: String
-    # populateRadar: String
-    # populateAzimuth: String
-    # getNode: String
-    # getNodes: [String]
-    # getPKIEvents: [PKIEvent]
-    getPKIEvents: Boolean
+    populateRadar: Boolean
+    populatePKIEvents: Boolean
+    getPKIEvents(input: PKIEventInput): [PKIEvent]
     # getActivity: [String]
     # getNode: Node
   }
 `
 
-// In radar, what does a key with a value of an empty array mean? Does that mean it is spawned but not online? Or that it is unspawned?
+// example query for getPKIEvents that works with its query variables
+// query ($input: PKIEventInput) {
+//   getPKIEvents(input: $input) {
+//     date
+//     point
+//     event
+//     field1
+//     field2
+//     field3
+//   }
+// }
 
-// What precisely do we want to store in the database? Because it doesn't make sense to store some things in there that can easily be accessed by a call to Azimuth, as this would result in degraded performance
-
-
-// Text file representing a stream of all of the pki events up to present time (seems to be real-time): https://azimuth.network/stats/events.txt
-
-// const resolvers = {
-//   Query: {...dbResolvers, ...apiResolvers}
+// query variables for query above:
+// {
+//   "input": {
+//     "urbitId": "~ripten",
+//     "since": "2021.3.25 12:20:20",
+//     "nodeTypes": ["PLANET"],
+//     "limit": 6,
+//     "offset": 3
+//   }
 // }
 
 const resolvers = {
-  Query: {...dbResolvers}
+  Query: {...dbResolvers, ...apiResolvers}
 }
 
 const server = new ApolloServer({ typeDefs, resolvers });

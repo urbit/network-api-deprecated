@@ -1,18 +1,21 @@
-// const axios = require('axios')
-// const ob  = require('urbit-ob')
-// const ajs = require('azimuth-js')
-// const Web3 = require('web3')
+const axios = require('axios')
+const ob  = require('urbit-ob')
+const ajs = require('azimuth-js')
+const Web3 = require('web3')
+const moment = require('moment')
 
-// const infura   = `https://mainnet.infura.io/v3/7014111724dc4d198c82cab378fa5453`
+const { Client }    = require('pg')
 
-// const provider = new Web3.providers.HttpProvider(infura)
-// const web3     = new Web3(provider)
+const infura   = `https://mainnet.infura.io/v3/7014111724dc4d198c82cab378fa5453`
 
-// const dbResolvers = require('./db')
-// const addToDB = dbResolvers.addToDB
+const provider = new Web3.providers.HttpProvider(infura)
+const web3     = new Web3(provider)
 
-// const azimuth = ajs.azimuth
-// const check = ajs.check
+const dbResolvers = require('./db')
+const addToDB = dbResolvers.addToDB
+
+const azimuth = ajs.azimuth
+const check = ajs.check
 
 // const getNode = async urbit_id => {
 //   try {
@@ -82,30 +85,134 @@
 //   return nodeArr
 // }
 
-// // Note to self: probably don't need to use any azimuth-js methods at all, unless there are things we can't derive from the PKI events
+// Note to self: probably don't need to use any azimuth-js methods at all, unless there are things we can't derive from the PKI events
 
-// // Note to self: radar will be used to populate get-activity. So it would be like returning an array of all the pings between the timestamp arguments. Each of those arrays would have a boolean. A single array is sufficient.
+// Note to self: radar will be used to populate get-activity. So it would be like returning an array of all the pings between the timestamp arguments. Each of those arrays would have a boolean. A single array is sufficient.
 
-// // get-activity would return something like the following
-// // [ 
-//   // {
-//   //   urbit_id: '~panmut-solneb',
-//   //   date: Date.now(),
-//   //   active: true
-//   // }, 
-//   // {
-//   //   urbit_id: '~wolref-podlex',
-//   //   date: Date.now(),
-//   //   active: true
-//   // } 
-// // ]
+// get-activity would return something like the following
+// [ 
+  // {
+  //   urbit_id: '~panmut-solneb',
+  //   date: Date.now(),
+  //   active: true
+  // }, 
+  // {
+  //   urbit_id: '~wolref-podlex',
+  //   date: Date.now(),
+  //   active: true
+  // } 
+// ]
 
-// const apiResolvers = {
-//   getNode: () => getNode('~panmut-solneb'),
-//   getNodes: () => getNodes('~panmut-solneb', '~wolref-podlex'),
-//   getPKIEvents: () => ['PKIevent'],
-//   // according to the spec, this returns activity as a boolean...how does this work? Do we just want to return whether it has had an activity at all? Because in the description of this method it also sounds like we maybe want to return data about actual activities
-//   getActivity: () => ['activity'],
-// }
+// Still need to query properly based on full list of parameters as provided in the doc
+const getPKIEvents = async (_, args) => {
+  console.log("🚀 ~ file: api.js ~ line 106 ~ getPKIEvents ~ args", args)
+  const { urbitId, since, nodeTypes, limit, offset } = args.input
+  console.log("🚀 ~ file: api.js ~ line 109 ~ getPKIEvents ~ urbitId", urbitId)
 
-// module.exports = apiResolvers
+  const client = new Client()
+
+  try {
+    await client.connect()
+    console.log('client connected')
+  } catch (error) {
+    console.log('client connect error')
+    throw error
+  }
+
+  
+
+  // const convertDateFunctionResponse = convertDateForMoment(since)
+  // console.log("🚀 ~ file: api.js ~ line 141 ~ getPKIEvents ~ convertDateFunctionResponse", convertDateFunctionResponse)
+  // const convertedDate = moment(convertDateFunctionResponse).format('MMMM Do YYYY, h:mm:ss a')
+  // console.log("🚀 ~ file: api.js ~ line 139 ~ getPKIEvents ~ convertedDate", convertedDate)
+
+  let acceptablePointNameLengths = []
+  
+  if (nodeTypes.includes('PLANET')) {
+    acceptablePointNameLengths.push(14)
+  }
+  if (nodeTypes.includes('STAR')) {
+    acceptablePointNameLengths.push(7)
+  }
+  if (nodeTypes.includes('GALAXY')) {
+    acceptablePointNameLengths.push(4)
+  }
+  
+
+  let query
+
+  // query = `select * from pki_events where point = '${urbitId}' and date > ${since};`
+  console.log("🚀 ~ file: api.js ~ line 135 ~ getPKIEvents ~ since", since)
+  // YYYY-MM-DDTHH:MM:SS
+  // query = `select * from pki_events where date > ${since};`
+  // CONVERT(VARCHAR(33), ${since}, 126)
+  query = `select * from pki_events where`
+  if (since) {
+    query += ` date < '${since}'`
+  }
+  if (nodeTypes && nodeTypes.length > 0) {
+    if (since) {
+      query += ` and`
+    }
+
+    console.log("🚀 ~ file: api.js ~ line 173 ~ getPKIEvents ~ acceptablePointNameLengths.length", acceptablePointNameLengths.length)
+    if (acceptablePointNameLengths.length === 1) {
+      query += ` length(point)=${acceptablePointNameLengths[0]}`
+    } else {
+      query += ` (`
+      for (let i in acceptablePointNameLengths) {
+        query += `length(point)=${acceptablePointNameLengths[i]}`
+        if (parseInt(i) !== acceptablePointNameLengths.length - 1) {
+          query += ` or `
+        }
+      }
+      query += `)`
+    }
+    
+    // length(point)=7
+  }
+  query += ` order by date desc`
+  if (limit) {
+    query += ` limit ${limit}`
+  }
+  if (offset) {
+    query += ` offset ${offset}`
+  }
+  query += `;`
+  // select * from pki_events where date < '2021.3.23 16:56:15'
+  // select * from pki_events where date < '2021.3.23 16:56:15' order by date desc;
+  console.log("🚀 ~ file: api.js ~ line 139 ~ getPKIEvents ~ query", query)
+
+  let addDataResponse
+  try {
+
+    addDataResponse = await client
+      .query(query)
+    // console.log("🚀 ~ file: db.js ~ line 106 ~ addToDB ~ addDataResponse", addDataResponse)
+  } catch (error) {
+    console.log(`addDataResponse error: ${error}`)
+    throw error
+  }
+
+  try {
+    let dbResponse = await client.end()
+    console.log('client.end() try')
+    dbResponse = JSON.stringify(dbResponse)
+    // return dbResponse
+    return addDataResponse.rows
+  } catch (error) {
+    console.log(`client.end() error: ${error}`)
+    throw error
+  } 
+}
+
+const apiResolvers = {
+  // getNode: () => getNode('~panmut-solneb'),
+  // getNodes: () => getNodes('~panmut-solneb', '~wolref-podlex'),
+  // populatePKIEvents: () => ['PKIevent'],
+  // // according to the spec, this returns activity as a boolean...how does this work? Do we just want to return whether it has had an activity at all? Because in the description of this method it also sounds like we maybe want to return data about actual activities
+  // getActivity: () => ['activity'],
+  getPKIEvents: (_, args) => getPKIEvents(_, args)
+}
+
+module.exports = apiResolvers
