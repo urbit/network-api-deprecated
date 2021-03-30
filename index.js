@@ -1,27 +1,18 @@
-const { ApolloServer, gql }   = require('apollo-server')
-const { GraphQLScalarType, Kind } = require('graphql')
-const dbResolvers             = require('./db')
-const apiResolvers            = require('./api')
+const { ApolloServer, gql }           = require('apollo-server')
+const { GraphQLScalarType, Kind }     = require('graphql')
+const dbResolvers                     = require('./db')
+const apiResolvers                    = require('./api')
 
 const typeDefs = gql`
-  
-  # Please completely ignore the commented out code below. It's just sandbox stuff to note for myself right now, will remove as needed later
-  # Which of the following values do we want to be required?
-  # type Node {
-  #   urbit_id: String!
-  #   node_type: String!
-  #   # Use radar to get status?
-  #   status: String!
-  #   continuity: Int
-  #   key_revision: Int
-  #   num_owners: Int
-  #   sponsors: [Node]
-  #   # We def want to call it kids, as that is what it's called in Arvo. There just seems to be some inconsistency with, for example, azimuth-js.
-  #   kids: [Node]
-  #   proxy_addresses: [String]
-  # }
 
   scalar Date
+
+  enum StatusName {
+    LOCKED
+    UNLOCKED
+    SPAWNED
+    ACTIVATED
+  }
 
   enum NodeType {
     GALAXY
@@ -31,7 +22,49 @@ const typeDefs = gql`
     # COMET
   }
 
-  # These are what get passed into get-pki-events
+  enum EventName {
+    CHANGE_OWNERSHIP
+    CHANGE_SPAWN_PROXY
+    CHANGE_TRANSFER_PROXY
+    CHANGE_MANAGEMENT_PROXY
+    CHANGE_VOTING_PROXY
+    ACTIVATE
+    SPAWN
+    ESCAPE_REQUESTED
+    ESCAPE_CANCELLED
+    ESCAPE_ACCEPTED
+    LOST_SPONSOR
+    BROKE_CONTINUITY
+  }
+
+  type NodeStatus {
+    nodeStatusId: Int!
+    statusName: StatusName!
+  }
+  
+  type Node {
+    urbitId: String
+    sponsorId: String
+    statusId: Int!
+    point: ID!
+    nodeType: NodeType
+    continuity: Int
+    revision: Int
+    numOwners: Int
+    ownershipProxy: String
+    spawnProxy: String
+    transferProxy: String
+    managementProxy: String
+    votingProxy: String
+  }
+
+  type Ping {
+    pingId: Int!
+    nodeId: String!
+    online: Boolean!
+    time: Date!
+  }
+
   input PKIEventInput {
     urbitId: String
     since: Date
@@ -41,23 +74,32 @@ const typeDefs = gql`
   }
 
   type PKIEvent {
-    date: Date
-    point: String
-    event: String
-    field1: String
-    field2: String
-    field3: String
+    eventId: Int!
+    nodeId: String!
+    eventTypeId: Int!
+    sponsorId: String
+    time: Date!
+    address: String
+    continuityNumber: Int
+    revisionNumber: Int
+  }
+
+  type EventType {
+    eventType: Int!
+    eventName: EventName!
   }
   
-  # Need to split into populatePKIEvents (call endpoint) and populatePKIEvents (send radar data from DB to UI). Currently populatePKIEvents is actually doing what populatePKIEvents will do
-  # populateRadar and populatePKIEvents should be mutations instead of queries
-  # should be a mutation instead of a query if there are any side effects at all
   type Query {
+    # getNode: Node
+    # getNodes: [Node]
+    getPKIEvents(input: PKIEventInput): [PKIEvent]
+    # The following will not actually be an array of strings. Need to discuss further
+    # getActivity: [String]
+  }
+
+  type Mutation {
     populateRadar: Boolean
     populatePKIEvents: Boolean
-    getPKIEvents(input: PKIEventInput): [PKIEvent]
-    # getActivity: [String]
-    # getNode: Node
   }
 `
 
@@ -71,30 +113,32 @@ const dateScalar = new GraphQLScalarType({
     if (ast.kind === Kind.INT) {
       return new Date(parseInt(ast.value, 10)) // Convert hard-coded AST string to integer and then to Date
     }
-    return null; // Invalid hard-coded value (not an integer)
+    return null
   },
 })
 
 // example query for getPKIEvents that works with its query variables
-// query ($input: PKIEventInput) {
+// mutation ($input: PKIEventInput) {
 //   getPKIEvents(input: $input) {
-//     date
-//     point
-//     event
-//     field1
-//     field2
-//     field3
+//       eventId
+//       nodeId
+//       eventTypeId
+//       sponsorId
+//       time
+//       address
+//       continuityNumber
+//       revisionNumber
 //   }
 // }
 
-// query variables for query above:
+// sample query variables for getPKIEvents mutation:
 // {
 //   "input": {
 //     "urbitId": "~ripten",
-//     "since": "2021.3.25 12:20:20",
+//     "since": "2021-03-24T16:40:32.000Z",
 //     "nodeTypes": ["PLANET"],
-//     "limit": 6,
-//     "offset": 3
+//     "limit": 10,
+//     "offset": 4
 //   }
 // }
 
