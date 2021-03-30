@@ -1,8 +1,7 @@
 const { Client }    = require('pg')
+const format = require('pg-format')
 const axios = require('axios')
 const https = require('https')
-const fs = require('fs')
-const moment = require('moment')
 
 // Later change this to just update the DB instead of delete and replace
 const addToDB = async (tableName, columns, getDataResponse) => {
@@ -16,12 +15,14 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     console.log('client connect error')
     throw error
   }
+
+  const deleteTableQuery = format('DROP TABLE IF EXISTS %I;', tableName)
   
   try {
     const deleteTableResponse = await client
-      .query(`DROP TABLE IF EXISTS ${tableName}`)
+      .query(deleteTableQuery)  
   } catch (error) {
-    console.log('deleteTableResponse error')
+    console.log(`deleteTableResponse error: ${error}`)
     throw error
   }
 
@@ -33,58 +34,56 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     columnsAndTypes = `SHIP_NAME VARCHAR, PING VARCHAR, RESULT VARCHAR, RESPONSE VARCHAR`
   }
 
+  const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
+
   try {
     const createTableResponse = await client
-      .query(`CREATE TABLE ${tableName} (${columnsAndTypes});`)
+      .query(createTableQuery)
   } catch (error) {
     console.log(`createTableResponse error: ${error}`)
     throw error
   }
 
-  let query
+  let insertQuery
 
   if (tableName === 'pki_events') {
-    query = `INSERT INTO ${tableName} (${columns[0]}, ${columns[1]}, ${columns[2]}, ${columns[3]}, ${columns[4]}, ${columns[5]}) VALUES`
-
+    insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s, %s, %s) VALUES`, tableName, columns[0], columns[1], columns[2], columns[3], columns[4], columns[5])
     for (let i in getDataResponse) {
       if (i > 0) {
-        query += `,`
+        insertQuery += `,`
       }
-      query += ` ('${getDataResponse[i][0] || null}', '${getDataResponse[i][1] || null}', '${getDataResponse[i][2] || null}', '${getDataResponse[i][3] || null}', '${getDataResponse[i][4] || null}', '${getDataResponse[i][5] || null}')`
+      insertQuery += format(` ('%s', '%s', '%s', '%s', '%s', '%s')`, getDataResponse[i][0] || null, getDataResponse[i][1] || null, getDataResponse[i][2] || null, getDataResponse[i][3] || null, getDataResponse[i][4] || null, getDataResponse[i][5] || null)
     }
-
-    query += ';'
+    insertQuery += ';'
   } else if (tableName === 'radar') {
 
-    query = `INSERT INTO ${tableName} (SHIP_NAME, PING, RESULT, RESPONSE) VALUES`
+    insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s) VALUES`, tableName, 'SHIP_NAME', 'PING', 'RESULT', 'RESPONSE')
     const ships = Object.keys(getDataResponse)
 
     for (let i in ships) {
       if (i > 0) {
-        query += `,`
+        insertQuery += `,`
       }
 
       if (getDataResponse[ships[i]].length === 0) {
-        query += ` ('${ships[i] || null}', '-1', '-1', '-1')`
+        insertQuery += format(` ('$%s', '-1', '-1', '-1')`, ships[i] || null)
       } else {
         for (let j in getDataResponse[ships[i]]) {
           if (j > 0) {
-            query += `,`
+            insertQuery += `,`
           }
-          query += ` ('${ships[i] || null}', '${getDataResponse[ships[i]][j]['ping'] || -1}', '${getDataResponse[ships[i]][j]['result'] || -1}', '${getDataResponse[ships[i]][j]['response'] || -1}')`
+          insertQuery += format(` ('$%s', '$%s', '$%s', '$%s')`, ships[i] || null, getDataResponse[ships[i]][j]['ping'] || -1, getDataResponse[ships[i]][j]['result'] || -1, getDataResponse[ships[i]][j]['response'] || -1)
         }
       }
     }
 
-    query += ';'
+    insertQuery += ';'
   }
 
   
 
   try {
-
-    const addDataResponse = await client
-      .query(query)
+    const addDataResponse = await client.query(insertQuery)
     console.log("🚀 ~ file: db.js ~ line 106 ~ addToDB ~ addDataResponse", addDataResponse)
   } catch (error) {
     console.log(`addDataResponse error: ${error}`)
@@ -92,10 +91,8 @@ const addToDB = async (tableName, columns, getDataResponse) => {
   }
 
   try {
-    let dbResponse = await client.end()
-    console.log('client.end() try')
-    dbResponse = JSON.stringify(dbResponse)
-    return dbResponse
+    console.log('client.end() try for this table: ', tableName)
+    await client.end()
   } catch (error) {
     console.log(`client.end() error: ${error}`)
     throw error
@@ -103,6 +100,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 }
 
 const populateRadar = async () => {
+  console.log('running populateRadar')
   const agent = new https.Agent({  
     rejectUnauthorized: false
    })
@@ -122,6 +120,7 @@ const populateRadar = async () => {
 }
 
 const populatePKIEvents = async () => {
+  console.log('running populatePKIEvents')
   const agent = new https.Agent({  
     rejectUnauthorized: false
    })

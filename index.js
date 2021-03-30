@@ -43,6 +43,14 @@ const typeDefs = gql`
     offset: Int
   }
 
+  # Will need to change the date to a custom defined scalar called Date
+  # Want date output like this: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
+  # Format similar to: 2011-10-05T14:48:00.000Z
+  # WIll need to return according to the spec data structure regarding field 1-3
+  # This will involve determining the content of the fields
+  # See if the postgres client handles injection attacks
+  # Will need to handle converting from events.txt fields to pki_event as defined in the spec at the database layer, not the GraphQL layer, because GraphQL is much slower at scale
+  # It is an unknown whether the list of PKI events is sufficient to populate get-node. If so, get-node can just be a materialized view
   type PKIEvent {
     date: String
     point: String
@@ -53,6 +61,8 @@ const typeDefs = gql`
   }
   
   # Need to split into populatePKIEvents (call endpoint) and populatePKIEvents (send radar data from DB to UI). Currently populatePKIEvents is actually doing what populatePKIEvents will do
+  # populateRadar and populatePKIEvents should be mutations instead of queries
+  # should be a mutation instead of a query if there are any side effects at all
   type Query {
     populateRadar: Boolean
     populatePKIEvents: Boolean
@@ -61,6 +71,8 @@ const typeDefs = gql`
     # getNode: Node
   }
 `
+// https://node-postgres.com/features/queries#parameterized-query
+// Do the above
 
 // example query for getPKIEvents that works with its query variables
 // query ($input: PKIEventInput) {

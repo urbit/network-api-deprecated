@@ -209,8 +209,6 @@ const getPKIEvents = async (_, args) => {
 const apiResolvers = {
   // getNode: () => getNode('~panmut-solneb'),
   // getNodes: () => getNodes('~panmut-solneb', '~wolref-podlex'),
-  // populatePKIEvents: () => ['PKIevent'],
-  // // according to the spec, this returns activity as a boolean...how does this work? Do we just want to return whether it has had an activity at all? Because in the description of this method it also sounds like we maybe want to return data about actual activities
   // getActivity: () => ['activity'],
   getPKIEvents: (_, args) => getPKIEvents(_, args)
 }
