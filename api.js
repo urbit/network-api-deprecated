@@ -21,8 +21,8 @@ const check = ajs.check
 //   try {
 
 //       const contracts = await ajs.initContractsPartial(web3, ajs.azimuth.mainnet)
-//       const pointNumber = parseInt(ob.patp2dec(urbit_id))
-//       const sponsor = azimuth.getSponsor(contracts, pointNumber)
+      // const pointNumber = parseInt(ob.patp2dec(urbit_id))
+      // const sponsor = azimuth.getSponsor(contracts, pointNumber)
 //       const sponsorOfSponsor = azimuth.getSponsor(contracts, sponsor)
 
 //       getDataResponse = {

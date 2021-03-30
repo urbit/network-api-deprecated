@@ -2,6 +2,14 @@ const { Client }    = require('pg')
 const format        = require('pg-format')
 const axios         = require('axios')
 const https         = require('https')
+const ob            = require('urbit-ob')
+const ajs           = require('azimuth-js')
+const azimuth       = ajs.azimuth
+const Web3          = require('web3')
+const infura        = `https://mainnet.infura.io/v3/7014111724dc4d198c82cab378fa5453`
+
+const provider      = new Web3.providers.HttpProvider(infura)
+const web3          = new Web3(provider)
 
 // Later change this to just update the DB instead of delete and replace
 const addToDB = async (tableName, columns, getDataResponse) => {
@@ -28,10 +36,38 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 
   let columnsAndTypes
 
+  let columnsWithoutTypes
+
   if (tableName === 'pki_events') {
-    columnsAndTypes = `${columns.join(' VARCHAR, ')} VARCHAR`
+    columnsWithoutTypes = [
+      'EVENT_ID', 
+      'NODE_ID', 
+      'EVENT_TYPE_ID',
+      'TIME',
+      'SPONSOR_ID', 
+      'ADDRESS', 
+      'CONTINUITY_NUMBER', 
+      'REVISION_NUMBER'
+    ]
+    columnsAndTypes = [
+      'EVENT_ID SERIAL NOT NULL', 
+      'NODE_ID VARCHAR NOT NULL', 
+      'EVENT_TYPE_ID INT NOT NULL', 
+      'TIME TIMESTAMP NOT NULL', 
+      'SPONSOR_ID VARCHAR', 
+      'ADDRESS VARCHAR', 
+      'CONTINUITY_NUMBER INT', 
+      'REVISION_NUMBER INT'
+    ]
+    columnsAndTypes = columnsAndTypes.join(', ')
   } else if (tableName === 'radar') {
-    columnsAndTypes = `SHIP_NAME VARCHAR, PING VARCHAR, RESULT VARCHAR, RESPONSE VARCHAR`
+    columnsWithoutTypes = [
+      'SHIP_NAME',
+      'PING',
+      'RESULT',
+      'RESPONSE'
+    ]
+    columnsAndTypes = `${columnsWithoutTypes.join(' VARCHAR, ')} VARCHAR`
   }
 
   const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
@@ -47,15 +83,58 @@ const addToDB = async (tableName, columns, getDataResponse) => {
   let insertQuery
 
   if (tableName === 'pki_events') {
-    insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s, %s, %s) VALUES`, tableName, columns[0], columns[1], columns[2], columns[3], columns[4], columns[5])
+
+    insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s, %s, %s, %s) VALUES`, tableName, columnsWithoutTypes[1], columnsWithoutTypes[2], columnsWithoutTypes[3], columnsWithoutTypes[4], columnsWithoutTypes[5], columnsWithoutTypes[6], columnsWithoutTypes[7])
+    
+    let contracts 
+    try {
+      contracts = await ajs.initContractsPartial(web3, ajs.azimuth.mainnet)
+    } catch (error) {
+      console.log(`initContractsPartial error: ${error}`)
+    }
+
     for (let i in getDataResponse) {
+    // for (let i = 0; i < 500; i++) {
       if (i > 0) {
         insertQuery += `,`
       }
-      // insertQuery += format(` ('%s', '%s', '%s', '%s', '%s', '%s')`, new Date(getDataResponse[i][0]).toISOString() || null, getDataResponse[i][1] || null, getDataResponse[i][2] || null, getDataResponse[i][3] || null, getDataResponse[i][4] || null, getDataResponse[i][5] || null)
-      insertQuery += format(` ('%s', '%s', '%s', '%s', '%s', '%s')`, getDataResponse[i][0] || null, getDataResponse[i][1] || null, getDataResponse[i][2] || null, getDataResponse[i][3] || null, getDataResponse[i][4] || null, getDataResponse[i][5] || null)
+
+      const node_id = getDataResponse[i][1]
+      const event_type = 2
+      const time = getDataResponse[i][0]
+      const pointNumber = parseInt(ob.patp2dec(node_id))
+
+      let sponsor_id 
+      
+      try {
+        sponsor_id = await azimuth.getSponsor(contracts, pointNumber) || null
+        sponsor_id = ob.patp(sponsor_id)
+      } catch (error) {
+        console.log(`getSponsor error: ${error}`)
+      }
+
+      const address = getDataResponse[i][3] || null
+
+      let continuity_number
+
+      try {
+        continuity_number = parseInt(await azimuth.getContinuityNumber(contracts, pointNumber)) || null
+      } catch (error) {
+        console.log(`getContinuityNumber error: ${error}`)
+      }
+
+      let revision_number
+
+      try {
+        revision_number = parseInt(await azimuth.getKeyRevisionNumber(contracts, pointNumber)) || null
+      } catch (error) {
+        console.log(`getKeyRevisionNumber error: ${error}`)
+      }
+
+      insertQuery += format(` ('%s', '%s', %L, '%s', '%s', %L, %L)`, node_id, event_type, time, sponsor_id, address, continuity_number, revision_number)
     }
     insertQuery += ';'
+
   } else if (tableName === 'radar') {
 
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s) VALUES`, tableName, 'SHIP_NAME', 'PING', 'RESULT', 'RESPONSE')
@@ -118,6 +197,27 @@ const populateRadar = async () => {
   return true
 }
 
+const convertDateToISO = dateToConvert => {
+  let string = dateToConvert.slice(1)
+  string = string.split('..')
+  string[0] = string[0].replace(/\./g, '-')
+  string[1] = string[1].replace(/\./g, ':') + '.000Z'
+  string = string.join('T')
+  return string
+}
+
+// pki_event
+// ***
+// event_id (pk)
+// node_id (fk) not null
+// event_type_id (fk) not null
+// sponsor_id (fk)
+// time not null
+// address
+// continuity_number
+// revision_number
+let columns = [ 'event_id', 'node_id', 'event_type_id', 'sponsor_id', 'time', 'address', 'continuity_number', 'revision_number']
+
 const populatePKIEvents = async () => {
   console.log('running populatePKIEvents')
   const agent = new https.Agent({  
@@ -132,31 +232,18 @@ const populatePKIEvents = async () => {
     throw error
   }
 
-  let columns = events.slice(0, events.indexOf('~')).split(',')
-  for (let i in columns) {
-    if (columns[i].includes('\n')) {
-      columns[i] = columns[i].replace('\n', '')
+  let txtColumns = events.slice(0, events.indexOf('~')).split(',')
+  for (let i in txtColumns) {
+    if (txtColumns[i].includes('\n')) {
+      txtColumns[i] = txtColumns[i].replace('\n', '')
     }
-    if (columns[i].includes(' ')) {
-      columns[i] = columns[i].replace(' ', '')
+    if (txtColumns[i].includes(' ')) {
+      txtColumns[i] = txtColumns[i].replace(' ', '')
     }
-    columns[i] = `${columns[i].toUpperCase()}`
+    txtColumns[i] = `${txtColumns[i].toUpperCase()}`
   }
 
   events = events.slice(events.indexOf('~')).split('\n')
-
-  // Dates are in the following format
-  // ~2021.3.24..21.28.47
-  // ~YYYY.M.DD..HH.MM.SS or ~YYYY.MM.DD..HH.MM.SS
-  // Example of ISO string: 2021-03-24T16:40:32.000Z
-  const convertDateToISO = dateToConvert => {
-    let string = dateToConvert.slice(1)
-    string = string.split('..')
-    string[0] = string[0].replace(/\./g, '-')
-    string[1] = string[1].replace(/\./g, ':') + '.000Z'
-    string = string.join('T')
-    return string
-  }
 
   for (let i in events) {
     let splitString = events[i]
@@ -165,24 +252,12 @@ const populatePKIEvents = async () => {
       splitStringArray.pop()
     }
     events[i] = splitStringArray
-
-    if (i === '0') {
-      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i]", events[i])
-      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i][0]", events[i][0])
-    }
     
     events[i][0] = convertDateToISO(events[i][0])
-
-    if (i === '0') {
-      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i]", events[i])
-      console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i][0]", events[i][0])
-    }
   }
-
-  console.log(`events[0]: ${events[0]}`)
   
   try {
-    await addToDB('pki_events', columns, events)
+    await addToDB('pki_events', txtColumns, events)
   } catch (error) {
     throw error
   }
