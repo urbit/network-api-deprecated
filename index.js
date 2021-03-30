@@ -44,18 +44,19 @@ const typeDefs = gql`
   
   type Node {
     urbitId: String
-    sponsorId: String
-    statusId: Int!
-    point: ID!
+
+    sponsors: [String]
+    # statusId: Int!
+    kids: [String]
     nodeType: NodeType
-    continuity: Int
-    revision: Int
-    numOwners: Int
-    ownershipProxy: String
-    spawnProxy: String
-    transferProxy: String
-    managementProxy: String
-    votingProxy: String
+    continuityNumber: Int
+    revisionNumber: Int
+    # numOwners: Int
+    # ownershipProxy: String
+    # spawnProxy: String
+    # transferProxy: String
+    # managementProxy: String
+    # votingProxy: String
   }
 
   type Ping {
@@ -71,6 +72,10 @@ const typeDefs = gql`
     nodeTypes: [NodeType]
     limit: Int
     offset: Int
+  }
+
+  input GetNodeInput {
+    urbitId: String
   }
 
   type PKIEvent {
@@ -90,7 +95,7 @@ const typeDefs = gql`
   }
   
   type Query {
-    # getNode: Node
+    getNode(input: GetNodeInput): Node
     # getNodes: [Node]
     getPKIEvents(input: PKIEventInput): [PKIEvent]
     # The following will not actually be an array of strings. Need to discuss further
@@ -120,14 +125,14 @@ const dateScalar = new GraphQLScalarType({
 // example query for getPKIEvents that works with its query variables
 // mutation ($input: PKIEventInput) {
 //   getPKIEvents(input: $input) {
-//       eventId
-//       nodeId
-//       eventTypeId
-//       sponsorId
-//       time
-//       address
-//       continuityNumber
-//       revisionNumber
+      // eventId
+      // nodeId
+      // eventTypeId
+      // sponsorId
+      // time
+      // address
+      // continuityNumber
+      // revisionNumber
 //   }
 // }
 
@@ -144,8 +149,13 @@ const dateScalar = new GraphQLScalarType({
 
 const resolvers = {
   Date: dateScalar,
-  Query: {...dbResolvers, ...apiResolvers}
+  Query: {...apiResolvers},
+  Mutation: {...dbResolvers}
 }
+
+// console.log("🚀 ~ file: index.js ~ line 155 ~ apiResolvers", apiResolvers)
+// const test = apiResolvers.getNode()
+// console.log("🚀 ~ file: index.js ~ line 158 ~ test", test)
 
 const server = new ApolloServer({ typeDefs, resolvers });
 

@@ -126,9 +126,9 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       let revision_number
 
       try {
-        revision_number = parseInt(await azimuth.getKeyRevisionNumber(contracts, pointNumber)) || null
+        revision_number = parseInt(await azimuth.getRevisionNumber(contracts, pointNumber)) || null
       } catch (error) {
-        console.log(`getKeyRevisionNumber error: ${error}`)
+        console.log(`getRevisionNumber error: ${error}`)
       }
 
       insertQuery += format(` ('%s', '%s', %L, '%s', '%s', %L, %L)`, node_id, event_type, time, sponsor_id, address, continuity_number, revision_number)
