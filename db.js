@@ -1,7 +1,7 @@
 const { Client }    = require('pg')
-const format = require('pg-format')
-const axios = require('axios')
-const https = require('https')
+const format        = require('pg-format')
+const axios         = require('axios')
+const https         = require('https')
 
 // Later change this to just update the DB instead of delete and replace
 const addToDB = async (tableName, columns, getDataResponse) => {
@@ -52,6 +52,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       if (i > 0) {
         insertQuery += `,`
       }
+      // insertQuery += format(` ('%s', '%s', '%s', '%s', '%s', '%s')`, new Date(getDataResponse[i][0]).toISOString() || null, getDataResponse[i][1] || null, getDataResponse[i][2] || null, getDataResponse[i][3] || null, getDataResponse[i][4] || null, getDataResponse[i][5] || null)
       insertQuery += format(` ('%s', '%s', '%s', '%s', '%s', '%s')`, getDataResponse[i][0] || null, getDataResponse[i][1] || null, getDataResponse[i][2] || null, getDataResponse[i][3] || null, getDataResponse[i][4] || null, getDataResponse[i][5] || null)
     }
     insertQuery += ';'
@@ -79,8 +80,6 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 
     insertQuery += ';'
   }
-
-  
 
   try {
     const addDataResponse = await client.query(insertQuery)
@@ -149,31 +148,14 @@ const populatePKIEvents = async () => {
   // Dates are in the following format
   // ~2021.3.24..21.28.47
   // ~YYYY.M.DD..HH.MM.SS or ~YYYY.MM.DD..HH.MM.SS
-  // moment().format('MMMM Do YYYY, h:mm:ss a')
-  const convertDateForMoment = dateToConvert => {
-    // console.log("🚀 ~ file: db.js ~ line 155 ~ populatePKIEvents ~ dateToConvert", dateToConvert)
-    let manipString = dateToConvert.slice(1)
-    // console.log("🚀 ~ file: api.js ~ line 132 ~ getPKIEvents ~ manipString", manipString)
-    manipString = manipString.split('..')
-    // console.log("🚀 ~ file: api.js ~ line 134 ~ getPKIEvents ~ manipString", manipString)
-    // manipString[0] = manipString[0].replace(/\./g, '-')
-
-    // console.log("🚀 ~ file: api.js ~ line 136 ~ getPKIEvents ~ manipString[0]", manipString[0])
-    // const found0 = manipString[0].match(/(?<=\-)(.*?)(?=\-)/)
-    // if (found0[0] == found0[1]) {
-    //   manipString[0].slice()
-    // }
-    // console.log("🚀 ~ file: api.js ~ line 137 ~ getPKIEvents ~ found", found)
-    // if (manipString[0]s
-
-    // console.log("🚀 ~ file: api.js ~ line 147 ~ getPKIEvents ~ manipString[0]", manipString[0])
-    manipString[1] = manipString[1].replace(/\./g, ':')
-    // console.log("🚀 ~ file: api.js ~ line 136 ~ getPKIEvents ~ manipString[1]", manipString[1])
-    manipString = manipString.join(' ')
-    manipString = manipString.replace(/\-/g, '.')
-    // manipString = manipString.join('T')
-    // console.log("🚀 ~ file: api.js ~ line 134 ~ getPKIEvents ~ manipString", manipString)
-    return manipString
+  // Example of ISO string: 2021-03-24T16:40:32.000Z
+  const convertDateToISO = dateToConvert => {
+    let string = dateToConvert.slice(1)
+    string = string.split('..')
+    string[0] = string[0].replace(/\./g, '-')
+    string[1] = string[1].replace(/\./g, ':') + '.000Z'
+    string = string.join('T')
+    return string
   }
 
   for (let i in events) {
@@ -189,8 +171,7 @@ const populatePKIEvents = async () => {
       console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i][0]", events[i][0])
     }
     
-    // events[i] = events[i].split(',')
-    events[i][0] = convertDateForMoment(events[i][0])
+    events[i][0] = convertDateToISO(events[i][0])
 
     if (i === '0') {
       console.log("🚀 ~ file: db.js ~ line 210 ~ populatePKIEvents ~ events[i]", events[i])
@@ -206,7 +187,6 @@ const populatePKIEvents = async () => {
     throw error
   }
   
-
   return true
   
 }

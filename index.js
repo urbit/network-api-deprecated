@@ -1,4 +1,5 @@
 const { ApolloServer, gql }   = require('apollo-server')
+const { GraphQLScalarType, Kind } = require('graphql')
 const dbResolvers             = require('./db')
 const apiResolvers            = require('./api')
 
@@ -20,8 +21,7 @@ const typeDefs = gql`
   #   proxy_addresses: [String]
   # }
 
-  # Later set up scalar according to this process: https://www.apollographql.com/docs/apollo-server/schema/custom-scalars/
-  # scalar Timestamp
+  scalar Date
 
   enum NodeType {
     GALAXY
@@ -34,25 +34,14 @@ const typeDefs = gql`
   # These are what get passed into get-pki-events
   input PKIEventInput {
     urbitId: String
-    # since: Timestamp
-    since: String
+    since: Date
     nodeTypes: [NodeType]
-    # limit: Int!
-    # offset: Int!
     limit: Int
     offset: Int
   }
 
-  # Will need to change the date to a custom defined scalar called Date
-  # Want date output like this: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
-  # Format similar to: 2011-10-05T14:48:00.000Z
-  # WIll need to return according to the spec data structure regarding field 1-3
-  # This will involve determining the content of the fields
-  # See if the postgres client handles injection attacks
-  # Will need to handle converting from events.txt fields to pki_event as defined in the spec at the database layer, not the GraphQL layer, because GraphQL is much slower at scale
-  # It is an unknown whether the list of PKI events is sufficient to populate get-node. If so, get-node can just be a materialized view
   type PKIEvent {
-    date: String
+    date: Date
     point: String
     event: String
     field1: String
@@ -71,8 +60,20 @@ const typeDefs = gql`
     # getNode: Node
   }
 `
-// https://node-postgres.com/features/queries#parameterized-query
-// Do the above
+
+const dateScalar = new GraphQLScalarType({
+  name: 'Date',
+  description: 'Date custom scalar type',
+  parseValue(value) {
+    return new Date(value) // Convert incoming integer to Date
+  },
+  parseLiteral(ast) {
+    if (ast.kind === Kind.INT) {
+      return new Date(parseInt(ast.value, 10)) // Convert hard-coded AST string to integer and then to Date
+    }
+    return null; // Invalid hard-coded value (not an integer)
+  },
+})
 
 // example query for getPKIEvents that works with its query variables
 // query ($input: PKIEventInput) {
@@ -98,6 +99,7 @@ const typeDefs = gql`
 // }
 
 const resolvers = {
+  Date: dateScalar,
   Query: {...dbResolvers, ...apiResolvers}
 }
 
