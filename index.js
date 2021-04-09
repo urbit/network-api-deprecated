@@ -105,6 +105,7 @@ const typeDefs = gql`
   type Mutation {
     populateRadar: Boolean
     populatePKIEvents: Boolean
+    populatePing: Boolean
   }
 `
 

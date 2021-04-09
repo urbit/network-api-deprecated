@@ -43,7 +43,7 @@ const getNode = async (_, args) => {
     throw error
   }
 
-  const sponsor = getSponsorResponse.rows[0].sponsor_id
+  const sponsor = getSponsorResponse.rows[0] ? getSponsorResponse.rows[0].sponsor_id : null
   // console.log("🚀 ~ file: api.js ~ line 47 ~ getNode ~ getSponsorResponse.rows[0]", getSponsorResponse.rows[0])
   console.log("🚀 ~ file: api.js ~ line 47 ~ getNode ~ sponsor", sponsor)
 
@@ -113,7 +113,7 @@ const getNode = async (_, args) => {
     throw error
   }
 
-  const continuityNumber = getContinuityNumberResponse.rows[0].continuity_number ? getContinuityNumberResponse.rows[0].continuity_number : null
+  const continuityNumber = getContinuityNumberResponse.rows[0] ? getContinuityNumberResponse.rows[0].continuity_number : null
 
   // key revision
   // select revision_number from pki_events where node_id = '~fognys-moslux' order by time desc limit 1;
@@ -131,7 +131,7 @@ const getNode = async (_, args) => {
     throw error
   }
 
-  const revisionNumber = getRevisionNumberResponse.rows[0].revision_number ? getRevisionNumberResponse.rows[0].revision_number : null
+  const revisionNumber = getRevisionNumberResponse.rows[0] ? getRevisionNumberResponse.rows[0].revision_number : null
 
   try {
     client.end()

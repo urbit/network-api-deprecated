@@ -68,6 +68,14 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'RESPONSE'
     ]
     columnsAndTypes = `${columnsWithoutTypes.join(' VARCHAR, ')} VARCHAR`
+  } else if (tableName === 'ping') {
+    columnsAndTypes = [
+      'PING_ID BIGSERIAL NOT NULL', 
+      'NODE_ID VARCHAR NOT NULL', 
+      'ONLINE BOOLEAN NOT NULL', 
+      'PING_TIME TIMESTAMP NOT NULL',
+      'RESPONSE_TIME TIMESTAMP NOT NULL'
+    ]
   }
 
   const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
@@ -79,6 +87,8 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     console.log(`createTableResponse error: ${error}`)
     throw error
   }
+
+  console.log('created table')
 
   let insertQuery
 
@@ -93,8 +103,14 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       console.log(`initContractsPartial error: ${error}`)
     }
 
+    console.log(`getDataResponse.length: ${getDataResponse.length}`)
+
     for (let i in getDataResponse) {
     // for (let i = 0; i < 500; i++) {
+      if (i % 200 === 0) {
+        console.log(`i: ${i}`)
+      }
+      
       if (i > 0) {
         insertQuery += `,`
       }
@@ -126,7 +142,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       let revision_number
 
       try {
-        revision_number = parseInt(await azimuth.getRevisionNumber(contracts, pointNumber)) || null
+        revision_number = parseInt(await azimuth.getKeyRevisionNumber(contracts, pointNumber)) || null
       } catch (error) {
         console.log(`getRevisionNumber error: ${error}`)
       }
@@ -146,21 +162,43 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       }
 
       if (getDataResponse[ships[i]].length === 0) {
-        insertQuery += format(` ('$%s', '-1', '-1', '-1')`, ships[i] || null)
+        insertQuery += format(` ('%s', '-1', '-1', '-1')`, ships[i] || null)
       } else {
         for (let j in getDataResponse[ships[i]]) {
           if (j > 0) {
             insertQuery += `,`
           }
-          insertQuery += format(` ('$%s', '$%s', '$%s', '$%s')`, ships[i] || null, getDataResponse[ships[i]][j]['ping'] || -1, getDataResponse[ships[i]][j]['result'] || -1, getDataResponse[ships[i]][j]['response'] || -1)
+          insertQuery += format(` ('%s', '%s', '%s', '%s')`, ships[i] || null, getDataResponse[ships[i]][j]['ping'] || -1, getDataResponse[ships[i]][j]['result'] || -1, getDataResponse[ships[i]][j]['response'] || -1)
         }
       }
     }
 
     insertQuery += ';'
-  }
+  } else if (tableName === 'ping') {
+    insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s) VALUES`, tableName, 'NODE_ID', 'ONLINE', 'PING_TIME', 'RESPONSE_TIME')
+    for (let i in getDataResponse) {
+      let { ship_name, ping, response } = getDataResponse[i]
+      if (i > 0) {
+        insertQuery += `,`
+      }
+      let online
+      ping !== -1 ? online = true : online = false
+      let pingTime
+      let responseTime
+      if (online) {
+        pingTime = new Date(parseInt(ping)).toISOString()
+        responseTime = new Date(parseInt(response)).toISOString()
+      } else {
+        pingTime = ping
+        responseTime = response
+      }
+      insertQuery += format(` ('%s', '%s', '%s', '%s')`, ship_name, online, pingTime, responseTime)
+    }
+  insertQuery += ';'
+}
 
   try {
+    console.log('running addDataResponse')
     const addDataResponse = await client.query(insertQuery)
     console.log("🚀 ~ file: db.js ~ line 106 ~ addToDB ~ addDataResponse", addDataResponse)
   } catch (error) {
@@ -226,11 +264,14 @@ const populatePKIEvents = async () => {
 
   let events
   try {
+    console.log('in populate pki events try')
     events = await axios.get('https://azimuth.network/stats/events.txt', { httpsAgent: agent })
-    events = events.data
   } catch (error) {
     throw error
   }
+
+  console.log('after populate pki events try')
+  events = events.data
 
   let txtColumns = events.slice(0, events.indexOf('~')).split(',')
   for (let i in txtColumns) {
@@ -266,10 +307,43 @@ const populatePKIEvents = async () => {
   
 }
 
+const populatePing = async () => {
+
+  const client = new Client()
+
+  try {
+    await client.connect()
+    console.log('client connected')
+  } catch (error) {
+    console.log('client connect error')
+    throw error
+  }
+
+  let radarResponse
+  try {
+    const radarQueryString = format(`select * from %I;`, 'radar')
+    console.log("🚀 ~ file: db.js ~ line 310 ~ populatePing ~ radarQueryString", radarQueryString)
+    radarResponse = await client.query(radarQueryString)
+    console.log('client connected')
+  } catch (error) {
+    console.log('client connect error')
+    throw error
+  }
+
+  const radarRows = radarResponse.rows
+  // console.log("🚀 ~ file: db.js ~ line 320 ~ populatePing ~ radarRows[0]", radarRows[0])
+
+  await addToDB('ping', null, radarRows)
+  return true
+}
+
 
 const dbResolvers = {
   populateRadar: () => populateRadar(),
-  populatePKIEvents: () => populatePKIEvents()
+  populatePKIEvents: () => populatePKIEvents(),
+  populatePing: () => populatePing(),
+  // populateNodeStatus: () => populateNodeStatus(),
+  // populateEventType: () => populateEventType()
 }
 
 module.exports = dbResolvers
