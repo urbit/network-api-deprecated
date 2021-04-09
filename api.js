@@ -265,7 +265,7 @@ const getNode = async (_, args) => {
 
 const getPKIEvents = async (_, args) => {
 
-  const { since, nodeTypes, limit, offset } = args.input
+  const { urbitId, since, nodeTypes, limit, offset } = args.input
 
   const client = new Client()
 
@@ -314,6 +314,11 @@ const getPKIEvents = async (_, args) => {
       query += `)`
     }
   }
+  if (urbitId) {
+    if (since || (nodeTypes && nodeTypes.length > 0)) {
+      query += format(` and %s='%s'`, 'node_id', urbitId)
+    }
+  }
   query += format(` order by %s desc`, 'time')
   if (limit) {
     query += format(` limit %s`, limit)
@@ -347,7 +352,6 @@ const getPKIEvents = async (_, args) => {
 const apiResolvers = {
   // getNode: () => getNode('~panmut-solneb'),
   getNode: (_, args) => getNode(_, args),
-  // getNode: () => 'thing',
   // getNodes: () => getNodes('~panmut-solneb', '~wolref-podlex'),
   // getActivity: () => ['activity'],
   getPKIEvents: (_, args) => getPKIEvents(_, args)

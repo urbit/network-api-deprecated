@@ -144,11 +144,11 @@ const dateScalar = new GraphQLScalarType({
 // sample query variables for getPKIEvents mutation:
 // {
 //   "input": {
-//     "urbitId": "~ripten",
-//     "since": "2021-03-24T16:40:32.000Z",
-//     "nodeTypes": ["PLANET"],
-//     "limit": 10,
-//     "offset": 4
+    // "urbitId": "~ripten",
+    // "since": "2021-03-24T16:40:32.000Z",
+    // "nodeTypes": ["PLANET"],
+    // "limit": 10,
+    // "offset": 4
 //   }
 // }
 

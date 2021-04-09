@@ -159,8 +159,8 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'breached': 12
     }
 
-    for (let i in getDataResponse) {
-    // for (let i = 0; i < 1000; i++) {
+    // for (let i in getDataResponse) {
+    for (let i = 0; i < 5000; i++) {
       if (i % 200 === 0) {
         console.log(`i: ${i}`)
       }
