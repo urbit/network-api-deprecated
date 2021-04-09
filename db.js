@@ -60,6 +60,24 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'REVISION_NUMBER INT'
     ]
     columnsAndTypes = columnsAndTypes.join(', ')
+  } if (tableName === 'raw_events') {
+    columnsWithoutTypes = [
+      'DATE', 
+      'POINT', 
+      'EVENT',
+      'FIELD1',
+      'FIELD2',
+      'FIELD3'
+    ]
+    columnsAndTypes = [
+      'DATE VARCHAR', 
+      'POINT VARCHAR', 
+      'EVENT VARCHAR',
+      'FIELD1 VARCHAR',
+      'FIELD2 VARCHAR',
+      'FIELD3 VARCHAR'
+    ]
+    columnsAndTypes = columnsAndTypes.join(', ')
   } else if (tableName === 'radar') {
     columnsWithoutTypes = [
       'SHIP_NAME',
@@ -89,6 +107,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
   }
 
   if (tableName !== 'node_type') {
+    console.log(`columnsAndTypes: ${columnsAndTypes}`)
     const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
 
     try {
@@ -135,6 +154,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 
       let sponsor_id 
       
+      // sponsor can be calculated from pki_events
       try {
         sponsor_id = await azimuth.getSponsor(contracts, pointNumber) || null
         sponsor_id = ob.patp(sponsor_id)
@@ -164,6 +184,42 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     }
     insertQuery += ';'
 
+  } else if (tableName === 'raw_events') {
+    insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s, %s, %s) VALUES`, tableName, 'DATE', 'POINT', 'EVENT', 'FIELD1', 'FIELD2', 'FIELD3')
+    for (let i in getDataResponse) {
+    // for (let i = 0; i < 100; i++) {
+      let [ date, point, event ] = getDataResponse[i]
+      let field1
+      let field2
+      let field3
+      if (getDataResponse[i].length > 3) {
+        field1 = getDataResponse[i][3]
+      } else {
+        field1 = null
+      }
+      if (getDataResponse[i].length > 4) {
+        field2 = getDataResponse[i][4]
+      } else {
+        field2 = null
+      }
+      if (getDataResponse[i].length > 5) {
+        field3 = getDataResponse[i][5]
+      } else {
+        field3 = null
+      }
+      console.log("🚀 ~ file: db.js ~ line 192 ~ addToDB ~ getDataResponse[i]", getDataResponse[i])
+      console.log(`i: ${i}`)
+      
+      if (i > 0) {
+        insertQuery += `,`
+      }
+
+      insertQuery += format(` ('%s', '%s', '%s', '%s', '%s', '%s')`, date, point, event, field1, field2, field3)
+
+    }
+
+    insertQuery += ';'
+    console.log("🚀 ~ file: db.js ~ line 203 ~ addToDB ~ insertQuery", insertQuery)
   } else if (tableName === 'radar') {
 
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s) VALUES`, tableName, 'SHIP_NAME', 'PING', 'RESULT', 'RESPONSE')
@@ -328,6 +384,57 @@ const populatePKIEvents = async () => {
   
 }
 
+const populateRawEvents = async () => {
+  console.log('running populateRawEvents')
+  const agent = new https.Agent({  
+    rejectUnauthorized: false
+   })
+
+  let events
+  try {
+    console.log('in populate pki events try')
+    events = await axios.get('https://azimuth.network/stats/events.txt', { httpsAgent: agent })
+  } catch (error) {
+    throw error
+  }
+
+  console.log('after populate pki events try')
+  events = events.data
+
+  let txtColumns = events.slice(0, events.indexOf('~')).split(',')
+  for (let i in txtColumns) {
+    if (txtColumns[i].includes('\n')) {
+      txtColumns[i] = txtColumns[i].replace('\n', '')
+    }
+    if (txtColumns[i].includes(' ')) {
+      txtColumns[i] = txtColumns[i].replace(' ', '')
+    }
+    txtColumns[i] = `${txtColumns[i].toUpperCase()}`
+  }
+
+  events = events.slice(events.indexOf('~')).split('\n')
+
+  for (let i in events) {
+    let splitString = events[i]
+    let splitStringArray = splitString.split(',')
+    if (splitStringArray[splitStringArray.length - 1] === '') {
+      splitStringArray.pop()
+    }
+    events[i] = splitStringArray
+    
+    events[i][0] = convertDateToISO(events[i][0])
+  }
+  
+  try {
+    await addToDB('raw_events', txtColumns, events)
+  } catch (error) {
+    throw error
+  }
+  
+  return true
+  
+}
+
 const populatePing = async () => {
 
   const client = new Client()
@@ -383,6 +490,7 @@ const populateNodeType = async () => {
 const dbResolvers = {
   populateRadar: () => populateRadar(),
   populatePKIEvents: () => populatePKIEvents(),
+  populateRawEvents: () => populateRawEvents(),
   populatePing: () => populatePing(),
   populateNodeStatus: () => populateNodeStatus(),
   populateEventType: () => populateEventType(),
