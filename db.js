@@ -159,11 +159,11 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'breached': 12
     }
 
-    // for (let i in getDataResponse) {
-    for (let i = 0; i < 1000; i++) {
-      // if (i % 200 === 0) {
-      //   console.log(`i: ${i}`)
-      // }
+    for (let i in getDataResponse) {
+    // for (let i = 0; i < 1000; i++) {
+      if (i % 200 === 0) {
+        console.log(`i: ${i}`)
+      }
       
       if (i > 0) {
         insertQuery += `,`
@@ -173,8 +173,6 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 
       const time = date
       const node_id = point
-      console.log("🚀 ~ file: db.js ~ line 152 ~ addToDB ~ getDataResponse[i]", getDataResponse[i])
-      console.log("🚀 ~ file: db.js ~ line 152 ~ addToDB ~ node_id", node_id)
       
       const event_type = _get(eventTypeKey, event) || 13
       
@@ -217,8 +215,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       const address = 'sample_address'
 
       let continuity_number
-      // Will need to do this only up to and no later than the pki event in question
-      let continuityNumberQuery = `select field1 from raw_events where point = '${node_id}' and event = 'breached' order by date desc limit 1;`
+      let continuityNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'breached' order by date desc limit 1;`
       let continuityNumberResponse
 
       try {
@@ -233,8 +230,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 
       // I think revision number is 'keys' event right?
       let revision_number
-      // Will need to do this only up to and no later than the pki event in question
-      let revisionNumberQuery = `select field1 from raw_events where point = '${node_id}' and event = 'keys' order by date desc limit 1;`
+      let revisionNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'keys' order by date desc limit 1;`
       let revisionNumberResponse
 
       try {
