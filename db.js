@@ -4,6 +4,7 @@ const axios         = require('axios')
 const https         = require('https')
 const ob            = require('urbit-ob')
 const ajs           = require('azimuth-js')
+const _get           = require('lodash.get')
 const azimuth       = ajs.azimuth
 const Web3          = require('web3')
 const infura        = `https://mainnet.infura.io/v3/7014111724dc4d198c82cab378fa5453`
@@ -126,6 +127,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 
   if (tableName === 'pki_events') {
 
+    // Need to update the following code to query the raw_events table instead of a GET
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s, %s, %s, %s) VALUES`, tableName, columnsWithoutTypes[1], columnsWithoutTypes[2], columnsWithoutTypes[3], columnsWithoutTypes[4], columnsWithoutTypes[5], columnsWithoutTypes[6], columnsWithoutTypes[7])
     
     let contracts 
@@ -137,48 +139,113 @@ const addToDB = async (tableName, columns, getDataResponse) => {
 
     console.log(`getDataResponse.length: ${getDataResponse.length}`)
 
-    for (let i in getDataResponse) {
-    // for (let i = 0; i < 500; i++) {
-      if (i % 200 === 0) {
-        console.log(`i: ${i}`)
-      }
+    // Are there events that don't fit in this? And if so what are they?
+    const eventTypeKey = {
+      'owner': 1,
+      'spawn-p': 2,
+      'transfer-p': 3,
+      'management-p': 4,
+      'voting-p': 5,
+      'activated': 6,
+      'spawned': 7,
+      'escape-req': 8,
+      // 'escape-can' or an equivalent does not seem to exist--follow up about this
+      // is it 'detached from'?
+      'escape-can': 9,
+      'escaped to': 10,
+      // 'lost-sponsor' does not exist. Not sure what this should be
+      'lost-sponsor': 11,
+      // make sure 'breached' is same as 'broke_continuity'
+      'breached': 12
+    }
+
+    // for (let i in getDataResponse) {
+    for (let i = 0; i < 1000; i++) {
+      // if (i % 200 === 0) {
+      //   console.log(`i: ${i}`)
+      // }
       
       if (i > 0) {
         insertQuery += `,`
       }
 
-      const node_id = getDataResponse[i][1]
-      const event_type = 2
-      const time = getDataResponse[i][0]
-      const pointNumber = parseInt(ob.patp2dec(node_id))
+      let { date, point, event, field1, field2, field3 } = getDataResponse[i]
 
-      let sponsor_id 
+      const time = date
+      const node_id = point
+      console.log("🚀 ~ file: db.js ~ line 152 ~ addToDB ~ getDataResponse[i]", getDataResponse[i])
+      console.log("🚀 ~ file: db.js ~ line 152 ~ addToDB ~ node_id", node_id)
       
-      // sponsor can be calculated from pki_events
-      try {
-        sponsor_id = await azimuth.getSponsor(contracts, pointNumber) || null
-        sponsor_id = ob.patp(sponsor_id)
-      } catch (error) {
-        console.log(`getSponsor error: ${error}`)
+      const event_type = _get(eventTypeKey, event) || 13
+      
+      // const pointNumber = parseInt(ob.patp2dec(point))
+
+      let sponsor_id = null
+
+      if (node_id.length === 4) {
+        sponsor_id = node_id
+      } else {
+        const latestEscapedToEventQuery = `select field2 from raw_events where point = '${node_id}' and event = 'sponsor' and field1 = 'escaped to';`
+        let latestEscapedToEventResponse
+        try {
+          latestEscapedToEventResponse = await client
+            .query(latestEscapedToEventQuery)
+        } catch (error) {
+          console.log(`createTableResponse error: ${error}`)
+          throw error
+        }
+        if (latestEscapedToEventResponse.rows.length > 0) {
+          sponsor_id = _get(latestEscapedToEventResponse, 'rows[0].field2') || null
+        } else if (node_id.length === 7) {
+          sponsor_id = `~${node_id.slice(4)}`
+        } else {
+          const spawnedEventQuery = `select point from raw_events where event = 'spawned' and field1 = '${node_id}';`
+          let spawnedEventResponse
+          try {
+            spawnedEventResponse = await client
+              .query(spawnedEventQuery)
+          } catch (error) {
+            console.log(`createTableResponse error: ${error}`)
+            throw error
+          }
+          sponsor_id = _get(spawnedEventResponse, 'rows[0].point') || null
+        }
       }
 
-      const address = getDataResponse[i][3] || null
+      // What is this supposed to be the address of?
+      // const address = getDataResponse[i][3] || null
+      const address = 'sample_address'
 
       let continuity_number
+      // Will need to do this only up to and no later than the pki event in question
+      let continuityNumberQuery = `select field1 from raw_events where point = '${node_id}' and event = 'breached' order by date desc limit 1;`
+      let continuityNumberResponse
 
       try {
-        continuity_number = parseInt(await azimuth.getContinuityNumber(contracts, pointNumber)) || null
+        continuityNumberResponse = await client
+          .query(continuityNumberQuery)
       } catch (error) {
-        console.log(`getContinuityNumber error: ${error}`)
+        console.log(`createTableResponse error: ${error}`)
+        throw error
       }
 
+      continuity_number = _get(continuityNumberResponse, 'rows[0].field1') || 1
+
+      // I think revision number is 'keys' event right?
       let revision_number
+      // Will need to do this only up to and no later than the pki event in question
+      let revisionNumberQuery = `select field1 from raw_events where point = '${node_id}' and event = 'keys' order by date desc limit 1;`
+      let revisionNumberResponse
 
       try {
-        revision_number = parseInt(await azimuth.getKeyRevisionNumber(contracts, pointNumber)) || null
+        revisionNumberResponse = await client
+          .query(revisionNumberQuery)
       } catch (error) {
-        console.log(`getRevisionNumber error: ${error}`)
+        console.log(`createTableResponse error: ${error}`)
+        throw error
       }
+
+      revision_number = _get(revisionNumberResponse, 'rows[0].field1') || 1
 
       insertQuery += format(` ('%s', '%s', %L, '%s', '%s', %L, %L)`, node_id, event_type, time, sponsor_id, address, continuity_number, revision_number)
     }
@@ -335,47 +402,77 @@ let columns = [ 'event_id', 'node_id', 'event_type_id', 'sponsor_id', 'time', 'a
 
 const populatePKIEvents = async () => {
   console.log('running populatePKIEvents')
-  const agent = new https.Agent({  
-    rejectUnauthorized: false
-   })
+  // const agent = new https.Agent({  
+  //   rejectUnauthorized: false
+  //  })
 
-  let events
+  // let events
+  // try {
+  //   console.log('in populate pki events try')
+  //   events = await axios.get('https://azimuth.network/stats/events.txt', { httpsAgent: agent })
+  // } catch (error) {
+  //   throw error
+  // }
+
+  // console.log('after populate pki events try')
+  // events = events.data
+
+  // let txtColumns = events.slice(0, events.indexOf('~')).split(',')
+  // for (let i in txtColumns) {
+  //   if (txtColumns[i].includes('\n')) {
+  //     txtColumns[i] = txtColumns[i].replace('\n', '')
+  //   }
+  //   if (txtColumns[i].includes(' ')) {
+  //     txtColumns[i] = txtColumns[i].replace(' ', '')
+  //   }
+  //   txtColumns[i] = `${txtColumns[i].toUpperCase()}`
+  // }
+
+  // events = events.slice(events.indexOf('~')).split('\n')
+
+  // for (let i in events) {
+  //   let splitString = events[i]
+  //   let splitStringArray = splitString.split(',')
+  //   if (splitStringArray[splitStringArray.length - 1] === '') {
+  //     splitStringArray.pop()
+  //   }
+  //   events[i] = splitStringArray
+    
+  //   events[i][0] = convertDateToISO(events[i][0])
+  // }
+
+  const client = new Client()
+
   try {
-    console.log('in populate pki events try')
-    events = await axios.get('https://azimuth.network/stats/events.txt', { httpsAgent: agent })
+    await client.connect()
+    console.log('client connected')
   } catch (error) {
+    console.log('client connect error')
     throw error
   }
 
-  console.log('after populate pki events try')
-  events = events.data
-
-  let txtColumns = events.slice(0, events.indexOf('~')).split(',')
-  for (let i in txtColumns) {
-    if (txtColumns[i].includes('\n')) {
-      txtColumns[i] = txtColumns[i].replace('\n', '')
-    }
-    if (txtColumns[i].includes(' ')) {
-      txtColumns[i] = txtColumns[i].replace(' ', '')
-    }
-    txtColumns[i] = `${txtColumns[i].toUpperCase()}`
+  let rawEventsResponse
+  try {
+    const rawEventsQueryString = format(`select * from %I;`, 'raw_events')
+    rawEventsResponse = await client.query(rawEventsQueryString)
+    console.log('client connected')
+  } catch (error) {
+    console.log('client connect error')
+    throw error
   }
 
-  events = events.slice(events.indexOf('~')).split('\n')
+  const rawEventsRows = rawEventsResponse.rows
 
-  for (let i in events) {
-    let splitString = events[i]
-    let splitStringArray = splitString.split(',')
-    if (splitStringArray[splitStringArray.length - 1] === '') {
-      splitStringArray.pop()
-    }
-    events[i] = splitStringArray
-    
-    events[i][0] = convertDateToISO(events[i][0])
+  try {
+    await client.end()
+  } catch (error) {
+    console.log(`client.end() error: ${error}`)
+    throw error
   }
   
   try {
-    await addToDB('pki_events', txtColumns, events)
+    // await addToDB('pki_events', txtColumns, rawEventsRows)
+    await addToDB('pki_events', null, rawEventsRows)
   } catch (error) {
     throw error
   }
