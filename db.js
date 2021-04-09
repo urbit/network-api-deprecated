@@ -81,19 +81,27 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'NODE_STATUS_ID SERIAL NOT NULL',
       'STATUS_NAME VARCHAR NOT NULL'
     ]
+  } else if (tableName === 'event_type') {
+    columnsAndTypes = [
+      'EVENT_TYPE_ID SERIAL NOT NULL',
+      'EVENT_NAME VARCHAR NOT NULL'
+    ]
   }
 
-  const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
+  if (tableName !== 'node_type') {
+    const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
 
-  try {
-    const createTableResponse = await client
-      .query(createTableQuery)
-  } catch (error) {
-    console.log(`createTableResponse error: ${error}`)
-    throw error
+    try {
+      const createTableResponse = await client
+        .query(createTableQuery)
+    } catch (error) {
+      console.log(`createTableResponse error: ${error}`)
+      throw error
+    }
+
+    console.log('created table')
   }
-
-  console.log('created table')
+  
 
   let insertQuery
 
@@ -202,6 +210,12 @@ const addToDB = async (tableName, columns, getDataResponse) => {
   insertQuery += ';'
 } else if (tableName === 'node_status') {
   insertQuery = format(`INSERT INTO %I (%s) VALUES ('%s'), ('%s'), ('%s'), ('%s');`, tableName, 'STATUS_NAME', 'locked', 'unlocked', 'spawned', 'activated')
+} else if (tableName === 'event_type') {
+  insertQuery = format(`INSERT INTO %I (%s) VALUES ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s');`, tableName, 'EVENT_NAME', 'change_ownership', 'change_spawn_proxy', 'change_transfer_proxy', 'change_management_proxy', 'change_voting_proxy', 'activate', 'spawn', 'escape_requested', 'escape_cancelled', 'escape_accepted', 'lost_sponsor', 'broke_continuity')
+  console.log("🚀 ~ file: db.js ~ line 212 ~ addToDB ~ insertQuery", insertQuery)
+} else if (tableName === 'node_type') {
+  insertQuery = format(`CREATE TYPE %I AS ENUM ('%s' ,'%s' ,'%s', '%s', '%s');`, tableName, 'galaxy', 'star', 'planet', 'comet', 'moon')
+  console.log("🚀 ~ file: db.js ~ line 212 ~ addToDB ~ insertQuery", insertQuery)
 }
 
   try {
@@ -355,13 +369,24 @@ const populateNodeStatus = async () => {
   return true
 }
 
+const populateEventType = async () => {
+  await addToDB('event_type', null, null)
+  return true
+}
+
+const populateNodeType = async () => {
+  await addToDB('node_type', null, null)
+  return true
+}
+
 
 const dbResolvers = {
   populateRadar: () => populateRadar(),
   populatePKIEvents: () => populatePKIEvents(),
   populatePing: () => populatePing(),
   populateNodeStatus: () => populateNodeStatus(),
-  // populateEventType: () => populateEventType()
+  populateEventType: () => populateEventType(),
+  populateNodeType: () => populateNodeType()
 }
 
 module.exports = dbResolvers
