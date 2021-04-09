@@ -76,6 +76,11 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'PING_TIME TIMESTAMP NOT NULL',
       'RESPONSE_TIME TIMESTAMP NOT NULL'
     ]
+  } else if (tableName === 'node_status') {
+    columnsAndTypes = [
+      'NODE_STATUS_ID SERIAL NOT NULL',
+      'STATUS_NAME VARCHAR NOT NULL'
+    ]
   }
 
   const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
@@ -195,6 +200,8 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       insertQuery += format(` ('%s', '%s', '%s', '%s')`, ship_name, online, pingTime, responseTime)
     }
   insertQuery += ';'
+} else if (tableName === 'node_status') {
+  insertQuery = format(`INSERT INTO %I (%s) VALUES ('%s'), ('%s'), ('%s'), ('%s');`, tableName, 'STATUS_NAME', 'locked', 'unlocked', 'spawned', 'activated')
 }
 
   try {
@@ -331,9 +338,20 @@ const populatePing = async () => {
   }
 
   const radarRows = radarResponse.rows
-  // console.log("🚀 ~ file: db.js ~ line 320 ~ populatePing ~ radarRows[0]", radarRows[0])
 
+  try {
+    console.log('client.end() try for this table: ', tableName)
+    await client.end()
+  } catch (error) {
+    console.log(`client.end() error: ${error}`)
+    throw error
+  } 
   await addToDB('ping', null, radarRows)
+  return true
+}
+
+const populateNodeStatus = async () => {
+  await addToDB('node_status', null, null)
   return true
 }
 
@@ -342,7 +360,7 @@ const dbResolvers = {
   populateRadar: () => populateRadar(),
   populatePKIEvents: () => populatePKIEvents(),
   populatePing: () => populatePing(),
-  // populateNodeStatus: () => populateNodeStatus(),
+  populateNodeStatus: () => populateNodeStatus(),
   // populateEventType: () => populateEventType()
 }
 

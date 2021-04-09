@@ -106,6 +106,7 @@ const typeDefs = gql`
     populateRadar: Boolean
     populatePKIEvents: Boolean
     populatePing: Boolean
+    populateNodeStatus: Boolean
   }
 `
 
