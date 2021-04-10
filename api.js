@@ -1,5 +1,6 @@
 const { Client }    = require('pg')
 const format        = require('pg-format')
+const _get           = require('lodash.get')
 
 const getNode = async (_, args) => {
   console.log('running getNode')
@@ -26,6 +27,20 @@ const getNode = async (_, args) => {
   }
 
   console.log("🚀 ~ file: api.js ~ line 18 ~ getNode ~ nodeType", nodeType)
+
+  const getNumOwnersQuery = `select count(*) from pki_events where node_id = '${urbitId}' and event_type_id = '1';`
+
+  let getNumOwnersResponse
+  try {
+    getNumOwnersResponse = await client
+      .query(getNumOwnersQuery)
+    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getNumOwnersResponse", getNumOwnersResponse)
+  } catch (error) {
+    console.log(`getNumOwnersResponse error: ${error}`)
+    throw error
+  }
+
+  const numOwners = _get(getNumOwnersResponse, 'rows[0].count') || 1
 
   let sponsors = []
   
@@ -69,10 +84,6 @@ const getNode = async (_, args) => {
   if (sponsorsSponsor) {
     sponsors.push(sponsorsSponsor)
   }
-
-  // status?
-
-  // let query = ''
   
 
   // kids
@@ -133,6 +144,76 @@ const getNode = async (_, args) => {
 
   const revisionNumber = getRevisionNumberResponse.rows[0] ? getRevisionNumberResponse.rows[0].revision_number : null
 
+  const getOwnershipProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = '1' order by time desc limit 1;`
+
+  let getOwnershipProxyResponse
+  try {
+    getOwnershipProxyResponse = await client
+      .query(getOwnershipProxyQuery)
+    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getOwnershipProxyResponse", getOwnershipProxyResponse)
+  } catch (error) {
+    console.log(`getOwnershipProxyResponse error: ${error}`)
+    throw error
+  }
+
+  const ownershipProxy = _get(getOwnershipProxyResponse, 'rows[0].address') || 'no_address'
+
+  const getSpawnProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = '2' order by time desc limit 1;`
+
+  let getSpawnProxyResponse
+  try {
+    getSpawnProxyResponse = await client
+      .query(getSpawnProxyQuery)
+    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getSpawnProxyResponse", getSpawnProxyResponse)
+  } catch (error) {
+    console.log(`getSpawnProxyResponse error: ${error}`)
+    throw error
+  }
+
+  const spawnProxy = _get(getSpawnProxyResponse, 'rows[0].address') || 'no_address'
+
+  const getTransferProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = '3' order by time desc limit 1;`
+
+  let getTransferProxyResponse
+  try {
+    getTransferProxyResponse = await client
+      .query(getTransferProxyQuery)
+    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getTransferProxyResponse", getTransferProxyResponse)
+  } catch (error) {
+    console.log(`getTransferProxyResponse error: ${error}`)
+    throw error
+  }
+
+  const transferProxy = _get(getTransferProxyResponse, 'rows[0].address') || 'no_address'
+
+  const getManagementProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = '4' order by time desc limit 1;`
+
+  let getManagementProxyResponse
+  try {
+    getManagementProxyResponse = await client
+      .query(getManagementProxyQuery)
+    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getManagementProxyResponse", getManagementProxyResponse)
+  } catch (error) {
+    console.log(`getManagementProxyResponse error: ${error}`)
+    throw error
+  }
+
+  const managementProxy = _get(getManagementProxyResponse, 'rows[0].address') || 'no_address'
+
+  const getVotingProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = '5' order by time desc limit 1;`
+
+  let getVotingProxyResponse
+  try {
+    getVotingProxyResponse = await client
+      .query(getVotingProxyQuery)
+    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getVotingProxyResponse", getVotingProxyResponse)
+  } catch (error) {
+    console.log(`getVotingProxyResponse error: ${error}`)
+    throw error
+  }
+
+  const votingProxy = _get(getVotingProxyResponse, 'rows[0].address') || 'no_address'
+
   try {
     client.end()
     console.log('client.end() try')
@@ -140,8 +221,21 @@ const getNode = async (_, args) => {
     console.log(`client.end() error: ${error}`)
     throw error
   }
-  // return { urbitId, nodeType, sponsors, continuityNumber, revisionNumber }
-  return { urbitId, nodeType, sponsors, kids, continuityNumber, revisionNumber }
+  
+  return { 
+    urbitId, 
+    nodeType, 
+    numOwners, 
+    sponsors, 
+    kids, 
+    continuityNumber, 
+    revisionNumber,
+    ownershipProxy,
+    spawnProxy,
+    transferProxy,
+    managementProxy,
+    votingProxy
+   }
 
   // return { urbitId }
   // PROXIES

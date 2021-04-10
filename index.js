@@ -44,19 +44,18 @@ const typeDefs = gql`
   
   type Node {
     urbitId: String
-
+    numOwners: Int
     sponsors: [String]
     # statusId: Int!
     kids: [String]
     nodeType: NodeType
     continuityNumber: Int
     revisionNumber: Int
-    # numOwners: Int
-    # ownershipProxy: String
-    # spawnProxy: String
-    # transferProxy: String
-    # managementProxy: String
-    # votingProxy: String
+    ownershipProxy: String
+    spawnProxy: String
+    transferProxy: String
+    managementProxy: String
+    votingProxy: String
   }
 
   type Ping {
