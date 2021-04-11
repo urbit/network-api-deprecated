@@ -92,8 +92,8 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'PING_ID BIGSERIAL NOT NULL', 
       'NODE_ID VARCHAR NOT NULL', 
       'ONLINE BOOLEAN NOT NULL', 
-      'PING_TIME TIMESTAMP NOT NULL',
-      'RESPONSE_TIME TIMESTAMP NOT NULL'
+      'PING_TIME TIMESTAMP',
+      'RESPONSE_TIME TIMESTAMP'
     ]
   } else if (tableName === 'node_status') {
     columnsAndTypes = [
@@ -294,7 +294,10 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       }
 
       if (getDataResponse[ships[i]].length === 0) {
-        insertQuery += format(` ('%s', '-1', '-1', '-1')`, ships[i] || null)
+        // insertQuery += format(` ('%s', '-1', '-1', '-1')`, ships[i] || null)
+        insertQuery += format(` ('%s', %L, %L, %L)`, ships[i] || null, null, null, null)
+        // insertQuery += format(` ('%s')`, ships[i] || null)
+        // insertQuery += format(` ('%s', 'null', 'null', 'null')`, ships[i] || null)
       } else {
         for (let j in getDataResponse[ships[i]]) {
           if (j > 0) {
@@ -308,13 +311,25 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     insertQuery += ';'
   } else if (tableName === 'ping') {
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s) VALUES`, tableName, 'NODE_ID', 'ONLINE', 'PING_TIME', 'RESPONSE_TIME')
+    // console.log("🚀 ~ file: db.js ~ line 312 ~ addToDB ~ getDataResponse", getDataResponse)
     for (let i in getDataResponse) {
       let { ship_name, ping, response } = getDataResponse[i]
+      if (i < 20) {
+        console.log(`JSON.stringify(getDataResponse[i]): ${JSON.stringify(getDataResponse[i])}`)
+        console.log(`ping: ${ping}`)
+        console.log(`typeof ping: ${typeof ping}`)
+      }
       if (i > 0) {
         insertQuery += `,`
       }
       let online
-      ping !== -1 ? online = true : online = false
+      if (ping === null) {
+        online = false
+      } else {
+        online = true
+      }
+      console.log("🚀 ~ file: db.js ~ line 330 ~ addToDB ~ online", online)
+      // ping !== '-1' ? online = true : online = false
       let pingTime
       let responseTime
       if (online) {
@@ -324,7 +339,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
         pingTime = ping
         responseTime = response
       }
-      insertQuery += format(` ('%s', '%s', '%s', '%s')`, ship_name, online, pingTime, responseTime)
+      insertQuery += format(` ('%s', '%s', %L, %L)`, ship_name, online, pingTime, responseTime)
     }
   insertQuery += ';'
 } else if (tableName === 'node_status') {
@@ -340,7 +355,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
   try {
     console.log('running addDataResponse')
     const addDataResponse = await client.query(insertQuery)
-    console.log("🚀 ~ file: db.js ~ line 106 ~ addToDB ~ addDataResponse", addDataResponse)
+    // console.log("🚀 ~ file: db.js ~ line 106 ~ addToDB ~ addDataResponse", addDataResponse)
   } catch (error) {
     console.log(`addDataResponse error: ${error}`)
     throw error
@@ -554,7 +569,6 @@ const populatePing = async () => {
   const radarRows = radarResponse.rows
 
   try {
-    console.log('client.end() try for this table: ', tableName)
     await client.end()
   } catch (error) {
     console.log(`client.end() error: ${error}`)

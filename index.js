@@ -92,13 +92,26 @@ const typeDefs = gql`
     eventType: Int!
     eventName: EventName!
   }
+
+  input GetActivityInput {
+    urbitId: String
+    since: Date
+    until: Date
+  }
+
+  type Activity {
+    urbitId: String
+    # What does date no time mean in the bounty description?
+    date: Date
+    active: Boolean
+  }
   
   type Query {
     getNode(input: GetNodeInput): Node
     # getNodes: [Node]
     getPKIEvents(input: PKIEventInput): [PKIEvent]
     # The following will not actually be an array of strings. Need to discuss further
-    # getActivity: [String]
+    getActivity(input: GetActivityInput): [Activity]
   }
 
   type Mutation {
