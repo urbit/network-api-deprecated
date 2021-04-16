@@ -1,6 +1,6 @@
 const { Client }    = require('pg')
 const format        = require('pg-format')
-const _get           = require('lodash.get')
+const _get          = require('lodash.get')
 
 const getActivity = async (_, args) => {
 

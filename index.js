@@ -165,19 +165,19 @@ const dateScalar = new GraphQLScalarType({
 // sample query variables for getPKIEvents mutation:
 // {
 //   "input": {
-    // "urbitId": "~ripten",
-    // "since": "2021-03-24T16:40:32.000Z",
-    // "nodeTypes": ["PLANET"],
-    // "limit": 10,
-    // "offset": 4
+//     "urbitId": "~ripten",
+//     "since": "2021-03-24T16:40:32.000Z",
+//     "nodeTypes": ["PLANET"],
+//     "limit": 10,
+//     "offset": 4
 //   }
 // }
 
 // {
 //   "input": {
 //     "urbitId": "~ripten",
-//     "since": "2021-04-10 21:08:37.053",
-//     "until": "2021-04-01 21:08:37.053"
+    // "since": "2021-04-10 21:08:37.053",
+    // "until": "2021-04-01 21:08:37.053"
 //   }
 // }
 
@@ -202,7 +202,7 @@ const cronExpression = '* * * * *'
 // Below is every 24 hours at midnight for production
 // const cronExpression = '0 0 * * *'
 
-cron.schedule(cronExpression, () => request('http://localhost:4000', query))
+// cron.schedule(cronExpression, () => request('http://localhost:4000', query))
 
 const server = new ApolloServer({ typeDefs, resolvers })
 

@@ -1,5 +1,5 @@
 const { Client }    = require('pg')
-const _get           = require('lodash.get')
+const _get          = require('lodash.get')
 
 const getNode = async (_, args) => {
   // console.log('running getNode')

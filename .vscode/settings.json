@@ -1,6 +1,7 @@
 {
   "conventionalCommits.scopes": [
     "GraphQL",
-    "postgres"
+    "postgres",
+    "README"
   ]
 }

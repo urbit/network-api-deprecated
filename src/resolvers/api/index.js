@@ -1,7 +1,7 @@
-const getNode = require('./getNode')
-const getNodes = require('./getNodes')
-const getActivity = require('./getActivity')
-const getPKIEvents = require('./getPKIEvents')
+const { getNode } = require('./getNode')
+const { getNodes } = require('./getNodes')
+const { getActivity } = require('./getActivity')
+const { getPKIEvents } = require('./getPKIEvents')
 
 const apiResolvers = {
   getNode: (_, args) => getNode(_, args),
