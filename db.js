@@ -140,6 +140,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     console.log(`getDataResponse.length: ${getDataResponse.length}`)
 
     // Are there events that don't fit in this? And if so what are they?
+    // Check for all of these in the code that populates the events.txt
     const eventTypeKey = {
       'owner': 1,
       'spawn-p': 2,
@@ -150,7 +151,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
       'spawned': 7,
       'escape-req': 8,
       // 'escape-can' or an equivalent does not seem to exist--follow up about this
-      // is it 'detached from'?
+      // it is possible that no one has ever tried this
       'escape-can': 9,
       'escaped to': 10,
       // 'lost-sponsor' does not exist. Not sure what this should be
@@ -160,7 +161,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     }
 
     // for (let i in getDataResponse) {
-    for (let i = 0; i < 5000; i++) {
+    for (let i = 0; i < 1000; i++) {
       if (i % 200 === 0) {
         console.log(`i: ${i}`)
       }
@@ -210,9 +211,24 @@ const addToDB = async (tableName, columns, getDataResponse) => {
         }
       }
 
-      // What is this supposed to be the address of?
+      // If there is no address associated with an event, it can just be null
+      // Certain types of events are associated with addresses, others are not
       // const address = getDataResponse[i][3] || null
-      const address = 'sample_address'
+      // const address = 'sample_address'
+      // let addressQuery = `select (field1, field2, field3) from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '~lompex-figrud' order by date desc limit 1;`
+      // let addressResponse
+
+      // try {
+      //   addressResponse = await client
+      //     .query(addressQuery)
+      // } catch (error) {
+      //   console.log(`createTableResponse error: ${error}`)
+      //   throw error
+      // }
+
+      // address = _get(addressResponse, 'rows[0].field1') || 1
+      let address
+      field1.length === 42 ? address = field1 : field2.length === 42 ? address = field2 : field3.length === 42 ? address = field3 : address = null
 
       let continuity_number
       let continuityNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'breached' order by date desc limit 1;`
@@ -250,22 +266,22 @@ const addToDB = async (tableName, columns, getDataResponse) => {
   } else if (tableName === 'raw_events') {
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s, %s, %s) VALUES`, tableName, 'DATE', 'POINT', 'EVENT', 'FIELD1', 'FIELD2', 'FIELD3')
     for (let i in getDataResponse) {
-    // for (let i = 0; i < 100; i++) {
       let [ date, point, event ] = getDataResponse[i]
       let field1
       let field2
       let field3
-      if (getDataResponse[i].length > 3) {
+      console.log("🚀 ~ file: db.js ~ line 273 ~ addToDB ~ getDataResponse[i][3]", getDataResponse[i][3])
+      if (getDataResponse[i].length > 3 && getDataResponse[i][3] !== '') {
         field1 = getDataResponse[i][3]
       } else {
         field1 = null
       }
-      if (getDataResponse[i].length > 4) {
+      if (getDataResponse[i].length > 4 && getDataResponse[i][4] !== '') {
         field2 = getDataResponse[i][4]
       } else {
         field2 = null
       }
-      if (getDataResponse[i].length > 5) {
+      if (getDataResponse[i].length > 5 && getDataResponse[i][5] !== '') {
         field3 = getDataResponse[i][5]
       } else {
         field3 = null
@@ -282,7 +298,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     }
 
     insertQuery += ';'
-    console.log("🚀 ~ file: db.js ~ line 203 ~ addToDB ~ insertQuery", insertQuery)
+    // console.log("🚀 ~ file: db.js ~ line 299 ~ addToDB ~ insertQuery", insertQuery)
   } else if (tableName === 'radar') {
 
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s) VALUES`, tableName, 'SHIP_NAME', 'PING', 'RESULT', 'RESPONSE')
@@ -343,7 +359,7 @@ const addToDB = async (tableName, columns, getDataResponse) => {
     }
   insertQuery += ';'
 } else if (tableName === 'node_status') {
-  insertQuery = format(`INSERT INTO %I (%s) VALUES ('%s'), ('%s'), ('%s'), ('%s');`, tableName, 'STATUS_NAME', 'locked', 'unlocked', 'spawned', 'activated')
+  insertQuery = format(`INSERT INTO %I (%s) VALUES ('%s'), ('%s'), ('%s'), ('%s'), ('%s');`, tableName, 'STATUS_NAME', 'locked', 'unlocked', 'spawned', 'activated', 'online')
 } else if (tableName === 'event_type') {
   insertQuery = format(`INSERT INTO %I (%s) VALUES ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s'), ('%s');`, tableName, 'EVENT_NAME', 'change_ownership', 'change_spawn_proxy', 'change_transfer_proxy', 'change_management_proxy', 'change_voting_proxy', 'activate', 'spawn', 'escape_requested', 'escape_cancelled', 'escape_accepted', 'lost_sponsor', 'broke_continuity')
   console.log("🚀 ~ file: db.js ~ line 212 ~ addToDB ~ insertQuery", insertQuery)
@@ -522,19 +538,32 @@ const populateRawEvents = async () => {
 
   events = events.slice(events.indexOf('~')).split('\n')
 
+  let returnArr = []
+
   for (let i in events) {
     let splitString = events[i]
     let splitStringArray = splitString.split(',')
-    if (splitStringArray[splitStringArray.length - 1] === '') {
-      splitStringArray.pop()
-    }
-    events[i] = splitStringArray
-    
-    events[i][0] = convertDateToISO(events[i][0])
+    // if (splitStringArray[splitStringArray.length - 1] === '') {
+    //   splitStringArray.pop()
+    // }
+
+    let newArr = splitStringArray.map(x => {
+      if (x === '') {
+        return null
+      } else {
+        return x
+      }
+    })
+
+    newArr[0] = convertDateToISO(newArr[0])
+    returnArr.push(newArr)
+    // events[i] = splitStringArray
+    // events[i][0] = convertDateToISO(events[i][0])
   }
   
   try {
-    await addToDB('raw_events', txtColumns, events)
+    // await addToDB('raw_events', txtColumns, events)
+    await addToDB('raw_events', txtColumns, returnArr)
   } catch (error) {
     throw error
   }

@@ -3,21 +3,23 @@ const format        = require('pg-format')
 const _get           = require('lodash.get')
 
 const getNode = async (_, args) => {
-  console.log('running getNode')
+  // console.log('running getNode')
   const { urbitId } = args.input
-  console.log("🚀 ~ file: api.js ~ line 7 ~ getNode ~ urbitId", urbitId)
+
+  // console.log("🚀 ~ file: api.js ~ line 7 ~ getNode ~ urbitId", urbitId)
 
   const client = new Client()
 
   try {
     await client.connect()
-    console.log('client connected')
+    // console.log('client connected')
   } catch (error) {
     console.log('client connect error')
     throw error
   }
 
   let nodeType = null
+
   if (urbitId.length === 4) {
     nodeType = 'GALAXY'
   } else if (urbitId.length === 7) {
@@ -25,8 +27,9 @@ const getNode = async (_, args) => {
   } else if (urbitId.length === 14) {
     nodeType = 'PLANET'
   }
+  
 
-  console.log("🚀 ~ file: api.js ~ line 18 ~ getNode ~ nodeType", nodeType)
+  // console.log("🚀 ~ file: api.js ~ line 18 ~ getNode ~ nodeType", nodeType)
 
   const getNumOwnersQuery = `select count(*) from pki_events where node_id = '${urbitId}' and event_type_id = '1';`
 
@@ -34,13 +37,13 @@ const getNode = async (_, args) => {
   try {
     getNumOwnersResponse = await client
       .query(getNumOwnersQuery)
-    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getNumOwnersResponse", getNumOwnersResponse)
+    // console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getNumOwnersResponse", getNumOwnersResponse)
   } catch (error) {
     console.log(`getNumOwnersResponse error: ${error}`)
     throw error
   }
 
-  const numOwners = _get(getNumOwnersResponse, 'rows[0].count') || 1
+  let numOwners = parseInt(_get(getNumOwnersResponse, 'rows[0].count')) || 1
 
   let sponsors = []
   
@@ -52,7 +55,7 @@ const getNode = async (_, args) => {
   try {
     getSponsorResponse = await client
       .query(getSponsorQuery)
-    console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getSponsorResponse", getSponsorResponse)
+    // console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getSponsorResponse", getSponsorResponse)
   } catch (error) {
     console.log(`addDataResponse error: ${error}`)
     throw error
@@ -60,7 +63,7 @@ const getNode = async (_, args) => {
 
   const sponsor = getSponsorResponse.rows[0] ? getSponsorResponse.rows[0].sponsor_id : null
   // console.log("🚀 ~ file: api.js ~ line 47 ~ getNode ~ getSponsorResponse.rows[0]", getSponsorResponse.rows[0])
-  console.log("🚀 ~ file: api.js ~ line 47 ~ getNode ~ sponsor", sponsor)
+  // console.log("🚀 ~ file: api.js ~ line 47 ~ getNode ~ sponsor", sponsor)
 
   sponsors.push(sponsor)
 
@@ -73,7 +76,7 @@ const getNode = async (_, args) => {
   try {
     getSponsorsSponsorResponse = await client
       .query(getSponsorsSponsorQuery)
-    console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getSponsorsSponsorResponse", getSponsorsSponsorResponse)
+    // console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getSponsorsSponsorResponse", getSponsorsSponsorResponse)
   } catch (error) {
     console.log(`addDataResponse error: ${error}`)
     throw error
@@ -87,19 +90,58 @@ const getNode = async (_, args) => {
 
   // start status section
 
-  
+  let statusId
+  let getStatusIdQuery = `select count(result) from radar where ship_name = '${urbitId}';`
+  let getStatusIdResponse
+  try {
+    getStatusIdResponse = await client
+      .query(getStatusIdQuery)
+
+    if (parseInt(getStatusIdResponse.rows[0].count) === 0) {
+      getStatusIdQuery = `select count(*) from pki_events where node_id = '${urbitId}' and event_type_id = '6';`
+      getStatusIdResponse = await client
+        .query(getStatusIdQuery)
+      
+      if (parseInt(getStatusIdResponse.rows[0].count) === 0) {
+        getStatusIdQuery = `select count(*) from pki_events where node_id = '${urbitId}' and event_type_id = '7';`
+        getStatusIdResponse = await client
+          .query(getStatusIdQuery)
+
+        if (parseInt(getStatusIdResponse.rows[0].count) === 0) {
+          getStatusIdQuery = `select count(*) from pki_events where node_id = '${urbitId}' and address = '0x86cd9cd0992f04231751e3761de45cecea5d1801' or address = '0x8c241098c3d3498fe1261421633fd57986d74aea';`
+          getStatusIdResponse = await client
+            .query(getStatusIdQuery)
+          
+          if (parseInt(getStatusIdResponse.rows[0].count) === 0) {
+            statusId = 1
+          } else {
+            statusId = 2
+          }
+        } else {
+          statusId = 3
+        }
+      } else {
+        statusId = 4
+      }
+    } else {
+      statusId = 5
+    }
+    // console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getStatusIdResponse", getStatusIdResponse)
+  } catch (error) {
+    console.log(`addDataResponse error: ${error}`)
+    throw error
+  }
 
   // end status section
   
 
   // kids
-  // select distinct node_id from pki_events where sponsor_id = '~wanfeb';
   const getKidsQuery = `select distinct node_id from pki_events where sponsor_id = '${urbitId}';`
   let getKidsResponse
   try {
     getKidsResponse = await client
       .query(getKidsQuery)
-    console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getKidsResponse", getKidsResponse)
+    // console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getKidsResponse", getKidsResponse)
   } catch (error) {
     console.log(`addDataResponse error: ${error}`)
     throw error
@@ -111,7 +153,7 @@ const getNode = async (_, args) => {
     kids.push(getKidsResponse.rows[i].node_id)
   }
 
-  console.log("🚀 ~ file: api.js ~ line 92 ~ getNode ~ kids", kids)
+  // console.log("🚀 ~ file: api.js ~ line 92 ~ getNode ~ kids", kids)
 
   // continuity
   // select continuity_number from pki_events where node_id = '~fognys-moslux' order by time desc limit 1;
@@ -124,7 +166,7 @@ const getNode = async (_, args) => {
   try {
     getContinuityNumberResponse = await client
       .query(getContinuityNumberQuery)
-    console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getContinuityNumberResponse", getContinuityNumberResponse)
+    // console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getContinuityNumberResponse", getContinuityNumberResponse)
   } catch (error) {
     console.log(`getContinuityNumberResponse error: ${error}`)
     throw error
@@ -142,7 +184,7 @@ const getNode = async (_, args) => {
   try {
     getRevisionNumberResponse = await client
       .query(getRevisionNumberQuery)
-    console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getRevisionNumberResponse", getRevisionNumberResponse)
+    // console.log("🚀 ~ file: api.js ~ line 27 ~ getNode ~ getRevisionNumberResponse", getRevisionNumberResponse)
   } catch (error) {
     console.log(`addDataResponse error: ${error}`)
     throw error
@@ -156,7 +198,7 @@ const getNode = async (_, args) => {
   try {
     getOwnershipProxyResponse = await client
       .query(getOwnershipProxyQuery)
-    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getOwnershipProxyResponse", getOwnershipProxyResponse)
+    // console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getOwnershipProxyResponse", getOwnershipProxyResponse)
   } catch (error) {
     console.log(`getOwnershipProxyResponse error: ${error}`)
     throw error
@@ -170,7 +212,7 @@ const getNode = async (_, args) => {
   try {
     getSpawnProxyResponse = await client
       .query(getSpawnProxyQuery)
-    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getSpawnProxyResponse", getSpawnProxyResponse)
+    // console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getSpawnProxyResponse", getSpawnProxyResponse)
   } catch (error) {
     console.log(`getSpawnProxyResponse error: ${error}`)
     throw error
@@ -184,7 +226,7 @@ const getNode = async (_, args) => {
   try {
     getTransferProxyResponse = await client
       .query(getTransferProxyQuery)
-    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getTransferProxyResponse", getTransferProxyResponse)
+    // console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getTransferProxyResponse", getTransferProxyResponse)
   } catch (error) {
     console.log(`getTransferProxyResponse error: ${error}`)
     throw error
@@ -198,7 +240,7 @@ const getNode = async (_, args) => {
   try {
     getManagementProxyResponse = await client
       .query(getManagementProxyQuery)
-    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getManagementProxyResponse", getManagementProxyResponse)
+    // console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getManagementProxyResponse", getManagementProxyResponse)
   } catch (error) {
     console.log(`getManagementProxyResponse error: ${error}`)
     throw error
@@ -212,7 +254,7 @@ const getNode = async (_, args) => {
   try {
     getVotingProxyResponse = await client
       .query(getVotingProxyQuery)
-    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getVotingProxyResponse", getVotingProxyResponse)
+    // console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ getVotingProxyResponse", getVotingProxyResponse)
   } catch (error) {
     console.log(`getVotingProxyResponse error: ${error}`)
     throw error
@@ -222,7 +264,7 @@ const getNode = async (_, args) => {
 
   try {
     client.end()
-    console.log('client.end() try')
+    // console.log('client.end() try')
   } catch (error) {
     console.log(`client.end() error: ${error}`)
     throw error
@@ -232,7 +274,8 @@ const getNode = async (_, args) => {
     urbitId, 
     nodeType, 
     numOwners, 
-    sponsors, 
+    sponsors,
+    statusId,
     kids, 
     continuityNumber, 
     revisionNumber,
@@ -256,6 +299,106 @@ const getNode = async (_, args) => {
   // query =+ `select top 1 value from pki_events where node_id = '~fognys-moslux'`
   // query += format(` order by %s desc`, 'time')
   // query += ';'
+}
+
+const getNodes = async (_, args) => {
+  console.log('running getNodes')
+  // const { q, node_types, limit, offset } = args.input
+
+  const q = _get(args, 'input.q') || '%'
+  const nodeTypes = _get(args, 'input.nodeTypes') || []
+  const limit = _get(args, 'input.limit') || 0
+  const offset = _get(args, 'input.offset') || 0
+
+  const client = new Client()
+
+  try {
+    await client.connect()
+    console.log('client connected')
+  } catch (error) {
+    console.log('client connect error')
+    throw error
+  }
+
+  let pointNameQuery = `select * from raw_events where point like '${q}%';`
+  console.log("🚀 ~ file: api.js ~ line 308 ~ getNodes ~ pointNameQuery", pointNameQuery)
+
+  let pointNameResponse
+  try {
+    console.log('inside try')
+    pointNameResponse = await client
+      .query(pointNameQuery)
+    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ pointNameResponse", pointNameResponse)
+  } catch (error) {
+    console.log(`pointNameResponse error: ${error}`)
+    throw error
+  }
+
+  console.log("🚀 ~ file: api.js ~ line 324 ~ getNodes ~ pointNameResponse.rows", pointNameResponse.rows)
+
+  try {
+    client.end()
+    console.log('client.end() try')
+  } catch (error) {
+    console.log(`client.end() error: ${error}`)
+    throw error
+  }
+
+  let returnArr = []
+  if (pointNameResponse.rows.length === 0) {
+    return returnArr
+  } else {
+    console.log('in else')
+    let potentialShips = []
+    for (let i in pointNameResponse.rows) {
+      console.log("🚀 ~ file: api.js ~ line 346 ~ getNodes ~ pointNameResponse.rows[i]", pointNameResponse.rows[i])
+      let point = pointNameResponse.rows[i].point
+      if (!potentialShips.includes(point)) {
+        potentialShips.push(point)
+      }
+    }
+      
+    console.log("🚀 ~ file: api.js ~ line 355 ~ getNodes ~ potentialShips", potentialShips)
+
+    for (let i in potentialShips) {
+      if (nodeTypes.length > 0) {
+        if (!nodeTypes.includes('GALAXY')) {
+          if (potentialShips[i].length ===  4) {
+            continue
+          }
+        } else if (!nodeTypes.includes('STAR')) {
+          if (potentialShips[i].length ===  7) {
+            continue
+          }
+        } else if (!nodeTypes.includes('PLANET')) {
+          if (potentialShips[i].length ===  14) {
+            continue
+          }
+        }
+      }
+
+      let node
+      try {
+        node = await getNode(_, { input: { urbitId: potentialShips[i] } })
+      } catch (error) {
+        console.log(`pointNameResponse error: ${error}`)
+        throw error
+      }
+
+      returnArr.push(node)
+    }
+
+    for (let i = offset; i > 0; i--) {
+      returnArr = returnArr.slice(1)
+    }
+
+    for (let i = limit; i > 0; i--) {
+      returnArr = returnArr.slice(0, limit)
+    }
+
+    console.log("🚀 ~ file: api.js ~ line 363 ~ getNodes ~ returnArr", returnArr)
+    return returnArr
+  }
 }
 
 // const urbitId = async (_, args) => {
@@ -516,30 +659,30 @@ const getActivity = async (_, args) => {
 
   let returnArr = []
   let responseDates = []
-    if (getActivityResponse.rows.length > 0) {
-      for (let i in getActivityResponse.rows) {
-        const online = _get(getActivityResponse.rows[i], 'online') || null
-        let response_time = _get(getActivityResponse.rows[i], 'response_time') || null
-        if (response_time) {
-          
-          response_time = response_time.toISOString().split('T', 1)[0]
-        }
 
-        if (!responseDates.includes(response_time)) {
-          returnArr.push({urbitId, active: online, date: response_time})
-          responseDates.push(response_time)
-        }
-        
+  if (getActivityResponse.rows.length > 0) {
+    console.log("🚀 ~ file: api.js ~ line 521 ~ getActivity ~ getActivityResponse.rows", getActivityResponse.rows)
+    for (let i in getActivityResponse.rows) {
+      const online = _get(getActivityResponse.rows[i], 'online') || false
+      let response_time = _get(getActivityResponse.rows[i], 'response_time') || null
+      if (response_time) {
+        response_time = response_time.toISOString().split('T', 1)[0]
       }
-    } else {
-      returnArr.push({urbitId, active: false, date: null})
+
+      if (!responseDates.includes(response_time)) {
+        returnArr.push({urbitId, active: online, date: response_time})
+        responseDates.push(response_time)
+      }
     }
+  } else {
+    returnArr.push({urbitId, active: false, date: null})
+  }
     return returnArr
 }
 
 const apiResolvers = {
   getNode: (_, args) => getNode(_, args),
-  // getNodes: (_, args) => getNodes(_, args),
+  getNodes: (_, args) => getNodes(_, args),
   getActivity: (_, args) => getActivity(_, args),
   getPKIEvents: (_, args) => getPKIEvents(_, args)
 }

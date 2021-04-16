@@ -46,7 +46,7 @@ const typeDefs = gql`
     urbitId: String
     numOwners: Int
     sponsors: [String]
-    # statusId: Int!
+    statusId: Int!
     kids: [String]
     nodeType: NodeType
     continuityNumber: Int
@@ -101,16 +101,21 @@ const typeDefs = gql`
 
   type Activity {
     urbitId: String
-    # What does date no time mean in the bounty description?
     date: Date
     active: Boolean
+  }
+
+  input GetNodesInput {
+    q: String
+    nodeTypes: [NodeType]
+    limit: Int
+    offset: Int
   }
   
   type Query {
     getNode(input: GetNodeInput): Node
-    # getNodes: [Node]
+    getNodes(input: GetNodesInput): [Node]
     getPKIEvents(input: PKIEventInput): [PKIEvent]
-    # The following will not actually be an array of strings. Need to discuss further
     getActivity(input: GetActivityInput): [Activity]
   }
 
@@ -161,6 +166,14 @@ const dateScalar = new GraphQLScalarType({
     // "nodeTypes": ["PLANET"],
     // "limit": 10,
     // "offset": 4
+//   }
+// }
+
+// {
+//   "input": {
+//     "urbitId": "~ripten",
+//     "since": "2021-04-10 21:08:37.053",
+//     "until": "2021-04-01 21:08:37.053"
 //   }
 // }
 
