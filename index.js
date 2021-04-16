@@ -1,7 +1,9 @@
 const { ApolloServer, gql }           = require('apollo-server')
 const { GraphQLScalarType, Kind }     = require('graphql')
-const dbResolvers                     = require('./db')
-const apiResolvers                    = require('./api')
+const cron                            = require('node-cron')
+const { request }                     = require('graphql-request')
+const dbResolvers                     = require('./src/resolvers/db/index')
+const apiResolvers                    = require('./src/resolvers/api/index')
 
 const typeDefs = gql`
 
@@ -37,6 +39,31 @@ const typeDefs = gql`
     BROKE_CONTINUITY
   }
 
+  input GetNodeInput {
+    urbitId: String
+  }
+
+  input GetNodesInput {
+    q: String
+    nodeTypes: [NodeType]
+    limit: Int
+    offset: Int
+  }
+
+  input PKIEventInput {
+    urbitId: String
+    since: Date
+    nodeTypes: [NodeType]
+    limit: Int
+    offset: Int
+  }
+
+  input GetActivityInput {
+    urbitId: String
+    since: Date
+    until: Date
+  }
+
   type NodeStatus {
     nodeStatusId: Int!
     statusName: StatusName!
@@ -65,18 +92,6 @@ const typeDefs = gql`
     time: Date!
   }
 
-  input PKIEventInput {
-    urbitId: String
-    since: Date
-    nodeTypes: [NodeType]
-    limit: Int
-    offset: Int
-  }
-
-  input GetNodeInput {
-    urbitId: String
-  }
-
   type PKIEvent {
     eventId: Int!
     nodeId: String!
@@ -93,23 +108,10 @@ const typeDefs = gql`
     eventName: EventName!
   }
 
-  input GetActivityInput {
-    urbitId: String
-    since: Date
-    until: Date
-  }
-
   type Activity {
     urbitId: String
     date: Date
     active: Boolean
-  }
-
-  input GetNodesInput {
-    q: String
-    nodeTypes: [NodeType]
-    limit: Int
-    offset: Int
   }
   
   type Query {
@@ -127,6 +129,8 @@ const typeDefs = gql`
     populateNodeStatus: Boolean
     populateEventType: Boolean
     populateNodeType: Boolean
+    populateAll: Boolean
+    populateDailyCron: Boolean
   }
 `
 
@@ -183,12 +187,23 @@ const resolvers = {
   Mutation: {...dbResolvers}
 }
 
-// console.log("🚀 ~ file: index.js ~ line 155 ~ apiResolvers", apiResolvers)
-// const test = apiResolvers.getNode()
-// console.log("🚀 ~ file: index.js ~ line 158 ~ test", test)
+const query = `
+  mutation {
+    populateDailyCron
+  }
+`
 
-const server = new ApolloServer({ typeDefs, resolvers });
+// Below is every minute for testing
+const cronExpression = '* * * * *'
 
-server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
-})
+// Below is every five minutes for testing
+// const cronExpression = '*/5 * * * *'
+
+// Below is every 24 hours at midnight for production
+// const cronExpression = '0 0 * * *'
+
+cron.schedule(cronExpression, () => request('http://localhost:4000', query))
+
+const server = new ApolloServer({ typeDefs, resolvers })
+
+server.listen().then(({ url }) => console.log(`🚀  Server ready at ${url}`))
