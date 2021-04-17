@@ -1,49 +1,21 @@
-const { Client }    = require('pg')
-const _get          = require('lodash.get')
+const _get                      = require('lodash.get')
 
-const { getNode }   = require('./getNode')
+const { query, connect, end }   = require('../utils')
+const { getNode }               = require('./getNode')
 
 const getNodes = async (_, args) => {
-  console.log('running getNodes')
-
+ 
   const q = _get(args, 'input.q') || '%'
   const nodeTypes = _get(args, 'input.nodeTypes') || []
   const limit = _get(args, 'input.limit') || 0
   const offset = _get(args, 'input.offset') || 0
 
-  const client = new Client()
+  await connect()
 
-  try {
-    await client.connect()
-    console.log('client connected')
-  } catch (error) {
-    console.log('client connect error')
-    throw error
-  }
+  const pointNameQuery = `select * from raw_events where point like '${q}%';`
+  const pointNameResponse = await query(pointNameQuery)
 
-  let pointNameQuery = `select * from raw_events where point like '${q}%';`
-  console.log("🚀 ~ file: api.js ~ line 308 ~ getNodes ~ pointNameQuery", pointNameQuery)
-
-  let pointNameResponse
-  try {
-    console.log('inside try')
-    pointNameResponse = await client
-      .query(pointNameQuery)
-    console.log("🚀 ~ file: api.js ~ line 37 ~ getNode ~ pointNameResponse", pointNameResponse)
-  } catch (error) {
-    console.log(`pointNameResponse error: ${error}`)
-    throw error
-  }
-
-  console.log("🚀 ~ file: api.js ~ line 324 ~ getNodes ~ pointNameResponse.rows", pointNameResponse.rows)
-
-  try {
-    client.end()
-    console.log('client.end() try')
-  } catch (error) {
-    console.log(`client.end() error: ${error}`)
-    throw error
-  }
+  await end()
 
   let returnArr = []
   if (pointNameResponse.rows.length === 0) {
@@ -78,13 +50,7 @@ const getNodes = async (_, args) => {
         }
       }
 
-      let node
-      try {
-        node = await getNode(_, { input: { urbitId: potentialShips[i] } })
-      } catch (error) {
-        console.log(`pointNameResponse error: ${error}`)
-        throw error
-      }
+      const node = await getNode(_, { input: { urbitId: potentialShips[i] } })
 
       returnArr.push(node)
     }
@@ -97,7 +63,6 @@ const getNodes = async (_, args) => {
       returnArr = returnArr.slice(0, limit)
     }
 
-    console.log("🚀 ~ file: api.js ~ line 363 ~ getNodes ~ returnArr", returnArr)
     return returnArr
   }
 }

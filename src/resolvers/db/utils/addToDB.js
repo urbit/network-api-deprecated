@@ -1,29 +1,15 @@
-const { Client }    = require('pg')
-const format        = require('pg-format')
-const _get          = require('lodash.get')
+const format                    = require('pg-format')
+const _get                      = require('lodash.get')
+
+const { query, connect, end }   = require('../../utils')
 
 // Later change this to just update the DB instead of delete and replace
 const addToDB = async (tableName, getDataResponse) => {
   
-  const client = new Client()
-
-  try {
-    await client.connect()
-    console.log('client connected')
-  } catch (error) {
-    console.log('client connect error')
-    throw error
-  }
+  await connect()
 
   const deleteTableQuery = format('DROP TABLE IF EXISTS %I;', tableName)
-  
-  try {
-    const deleteTableResponse = await client
-      .query(deleteTableQuery)  
-  } catch (error) {
-    console.log(`deleteTableResponse error: ${error}`)
-    throw error
-  }
+  await query(deleteTableQuery)
 
   let columnsAndTypes
 
@@ -98,18 +84,8 @@ const addToDB = async (tableName, getDataResponse) => {
   }
 
   if (tableName !== 'node_type') {
-    console.log(`columnsAndTypes: ${columnsAndTypes}`)
     const createTableQuery = format('CREATE TABLE %I (%s);', tableName, columnsAndTypes)
-
-    try {
-      const createTableResponse = await client
-        .query(createTableQuery)
-    } catch (error) {
-      console.log(`createTableResponse error: ${error}`)
-      throw error
-    }
-
-    console.log('created table')
+    await query(createTableQuery)
   }
   
 
@@ -117,13 +93,9 @@ const addToDB = async (tableName, getDataResponse) => {
 
   if (tableName === 'pki_events') {
 
-    // Need to update the following code to query the raw_events table instead of a GET
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s, %s, %s, %s) VALUES`, tableName, columnsWithoutTypes[1], columnsWithoutTypes[2], columnsWithoutTypes[3], columnsWithoutTypes[4], columnsWithoutTypes[5], columnsWithoutTypes[6], columnsWithoutTypes[7])
 
-    console.log(`getDataResponse.length: ${getDataResponse.length}`)
-
-    // Are there events that don't fit in this? And if so what are they?
-    // Check for all of these in the code that populates the events.txt
+    // TODO: Check for all of these in the code that populates the events.txt
     const eventTypeKey = {
       'owner': 1,
       'spawn-p': 2,
@@ -143,8 +115,9 @@ const addToDB = async (tableName, getDataResponse) => {
       'breached': 12
     }
 
-    // for (let i in getDataResponse) {
-    for (let i = 0; i < 1000; i++) {
+    // Can use the following line for testing when needed:
+    // for (let i = 0; i < 1000; i++) {
+    for (let i in getDataResponse) {
       if (i % 200 === 0) {
         console.log(`i: ${i}`)
       }
@@ -166,28 +139,15 @@ const addToDB = async (tableName, getDataResponse) => {
         sponsor_id = node_id
       } else {
         const latestEscapedToEventQuery = `select field2 from raw_events where point = '${node_id}' and event = 'sponsor' and field1 = 'escaped to';`
-        let latestEscapedToEventResponse
-        try {
-          latestEscapedToEventResponse = await client
-            .query(latestEscapedToEventQuery)
-        } catch (error) {
-          console.log(`createTableResponse error: ${error}`)
-          throw error
-        }
+        const latestEscapedToEventResponse = await query(latestEscapedToEventQuery)
+        
         if (latestEscapedToEventResponse.rows.length > 0) {
           sponsor_id = _get(latestEscapedToEventResponse, 'rows[0].field2') || null
         } else if (node_id.length === 7) {
           sponsor_id = `~${node_id.slice(4)}`
         } else {
           const spawnedEventQuery = `select point from raw_events where event = 'spawned' and field1 = '${node_id}';`
-          let spawnedEventResponse
-          try {
-            spawnedEventResponse = await client
-              .query(spawnedEventQuery)
-          } catch (error) {
-            console.log(`createTableResponse error: ${error}`)
-            throw error
-          }
+          const spawnedEventResponse = await query(spawnedEventQuery)
           sponsor_id = _get(spawnedEventResponse, 'rows[0].point') || null
         }
       }
@@ -196,30 +156,14 @@ const addToDB = async (tableName, getDataResponse) => {
       field1.length === 42 ? address = field1 : field2.length === 42 ? address = field2 : field3.length === 42 ? address = field3 : address = null
 
       let continuity_number
-      let continuityNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'breached' order by date desc limit 1;`
-      let continuityNumberResponse
-
-      try {
-        continuityNumberResponse = await client
-          .query(continuityNumberQuery)
-      } catch (error) {
-        console.log(`createTableResponse error: ${error}`)
-        throw error
-      }
+      const continuityNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'breached' order by date desc limit 1;`
+      const continuityNumberResponse = await query(continuityNumberQuery)
 
       continuity_number = _get(continuityNumberResponse, 'rows[0].field1') || 1
 
       let revision_number
-      let revisionNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'keys' order by date desc limit 1;`
-      let revisionNumberResponse
-
-      try {
-        revisionNumberResponse = await client
-          .query(revisionNumberQuery)
-      } catch (error) {
-        console.log(`createTableResponse error: ${error}`)
-        throw error
-      }
+      const revisionNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'keys' order by date desc limit 1;`
+      const revisionNumberResponse = await query(revisionNumberQuery)
 
       revision_number = _get(revisionNumberResponse, 'rows[0].field1') || 1
 
@@ -286,12 +230,8 @@ const addToDB = async (tableName, getDataResponse) => {
   } else if (tableName === 'ping') {
     insertQuery = format(`INSERT INTO %I (%s, %s, %s, %s) VALUES`, tableName, 'NODE_ID', 'ONLINE', 'PING_TIME', 'RESPONSE_TIME')
     for (let i in getDataResponse) {
+      
       let { ship_name, ping, response } = getDataResponse[i]
-      if (i < 20) {
-        console.log(`JSON.stringify(getDataResponse[i]): ${JSON.stringify(getDataResponse[i])}`)
-        console.log(`ping: ${ping}`)
-        console.log(`typeof ping: ${typeof ping}`)
-      }
       if (i > 0) {
         insertQuery += `,`
       }
@@ -324,21 +264,8 @@ const addToDB = async (tableName, getDataResponse) => {
   console.log("🚀 ~ file: db.js ~ line 212 ~ addToDB ~ insertQuery", insertQuery)
 }
 
-  try {
-    console.log('running addDataResponse')
-    const addDataResponse = await client.query(insertQuery)
-  } catch (error) {
-    console.log(`addDataResponse error: ${error}`)
-    throw error
-  }
-
-  try {
-    console.log('client.end() try for this table: ', tableName)
-    await client.end()
-  } catch (error) {
-    console.log(`client.end() error: ${error}`)
-    throw error
-  } 
+  await query(insertQuery)
+  await end()
 }
 
 module.exports = { addToDB }
