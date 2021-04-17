@@ -1,7 +1,7 @@
-const { populateRadar }         = require('./populateRadar')
-const { populatePing }          = require('./populatePing')
-const { populateRawEvents }     = require('./populateRawEvents')
-const { populatePKIEvents }     = require('./populatePKIEvents')
+const { populateRadar } = require('./populateRadar')
+const { populatePing } = require('./populatePing')
+const { populateRawEvents } = require('./populateRawEvents')
+const { populatePKIEvents } = require('./populatePKIEvents')
 
 const populateDailyCron = async () => {
   await populateRadar()

@@ -1,19 +1,18 @@
-const { axiosGet }          = require('../utils')
-const { addToDB }           = require('./utils/addToDB')
-const { convertDateToISO }  = require('./utils/convertDateToISO')
+const { axiosGet } = require('../utils')
+const { addToDB } = require('./utils/addToDB')
+const { convertDateToISO } = require('./utils/convertDateToISO')
 
 const populateRawEvents = async () => {
-  
   let events = await axiosGet('https://azimuth.network/stats/events.txt')
   events = events.slice(events.indexOf('~')).split('\n')
 
-  let returnArr = []
+  const returnArr = []
 
-  for (let i in events) {
-    let splitString = events[i]
-    let splitStringArray = splitString.split(',')
+  for (const i in events) {
+    const splitString = events[i]
+    const splitStringArray = splitString.split(',')
 
-    let newArr = splitStringArray.map(x => {
+    const newArr = splitStringArray.map(x => {
       if (x === '') {
         return null
       } else {
@@ -26,9 +25,8 @@ const populateRawEvents = async () => {
   }
 
   await addToDB('raw_events', returnArr)
-  
+
   return true
-  
 }
 
 module.exports = { populateRawEvents }

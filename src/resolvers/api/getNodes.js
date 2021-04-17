@@ -1,10 +1,9 @@
-const _get                      = require('lodash.get')
+const _get = require('lodash.get')
 
-const { query, connect, end }   = require('../utils')
-const { getNode }               = require('./getNode')
+const { query, connect, end } = require('../utils')
+const { getNode } = require('./getNode')
 
 const getNodes = async (_, args) => {
- 
   const q = _get(args, 'input.q') || '%'
   const nodeTypes = _get(args, 'input.nodeTypes') || []
   const limit = _get(args, 'input.limit') || 0
@@ -22,29 +21,29 @@ const getNodes = async (_, args) => {
     return returnArr
   } else {
     console.log('in else')
-    let potentialShips = []
-    for (let i in pointNameResponse.rows) {
-      console.log("🚀 ~ file: api.js ~ line 346 ~ getNodes ~ pointNameResponse.rows[i]", pointNameResponse.rows[i])
-      let point = pointNameResponse.rows[i].point
+    const potentialShips = []
+    for (const i in pointNameResponse.rows) {
+      console.log('🚀 ~ file: api.js ~ line 346 ~ getNodes ~ pointNameResponse.rows[i]', pointNameResponse.rows[i])
+      const point = pointNameResponse.rows[i].point
       if (!potentialShips.includes(point)) {
         potentialShips.push(point)
       }
     }
-      
-    console.log("🚀 ~ file: api.js ~ line 355 ~ getNodes ~ potentialShips", potentialShips)
 
-    for (let i in potentialShips) {
+    console.log('🚀 ~ file: api.js ~ line 355 ~ getNodes ~ potentialShips', potentialShips)
+
+    for (const i in potentialShips) {
       if (nodeTypes.length > 0) {
         if (!nodeTypes.includes('GALAXY')) {
-          if (potentialShips[i].length ===  4) {
+          if (potentialShips[i].length === 4) {
             continue
           }
         } else if (!nodeTypes.includes('STAR')) {
-          if (potentialShips[i].length ===  7) {
+          if (potentialShips[i].length === 7) {
             continue
           }
         } else if (!nodeTypes.includes('PLANET')) {
-          if (potentialShips[i].length ===  14) {
+          if (potentialShips[i].length === 14) {
             continue
           }
         }

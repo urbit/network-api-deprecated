@@ -1,9 +1,9 @@
-const { ApolloServer, gql }           = require('apollo-server')
-const { GraphQLScalarType, Kind }     = require('graphql')
-const cron                            = require('node-cron')
-const { request }                     = require('graphql-request')
-const dbResolvers                     = require('./src/resolvers/db/index')
-const apiResolvers                    = require('./src/resolvers/api/index')
+const { ApolloServer, gql } = require('apollo-server')
+const { GraphQLScalarType, Kind } = require('graphql')
+
+// const { startCron } = require('./src/cron')
+const dbResolvers = require('./src/resolvers/db/index')
+const apiResolvers = require('./src/resolvers/api/index')
 
 const typeDefs = gql`
 
@@ -137,72 +137,24 @@ const typeDefs = gql`
 const dateScalar = new GraphQLScalarType({
   name: 'Date',
   description: 'Date custom scalar type',
-  parseValue(value) {
+  parseValue (value) {
     return new Date(value) // Convert incoming integer to Date
   },
-  parseLiteral(ast) {
+  parseLiteral (ast) {
     if (ast.kind === Kind.INT) {
       return new Date(parseInt(ast.value, 10)) // Convert hard-coded AST string to integer and then to Date
     }
     return null
-  },
+  }
 })
-
-// example query for getPKIEvents that works with its query variables
-// mutation ($input: PKIEventInput) {
-//   getPKIEvents(input: $input) {
-      // eventId
-      // nodeId
-      // eventTypeId
-      // sponsorId
-      // time
-      // address
-      // continuityNumber
-      // revisionNumber
-//   }
-// }
-
-// sample query variables for getPKIEvents mutation:
-// {
-//   "input": {
-//     "urbitId": "~ripten",
-//     "since": "2021-03-24T16:40:32.000Z",
-//     "nodeTypes": ["PLANET"],
-//     "limit": 10,
-//     "offset": 4
-//   }
-// }
-
-// {
-//   "input": {
-//     "urbitId": "~ripten",
-    // "since": "2021-04-10 21:08:37.053",
-    // "until": "2021-04-01 21:08:37.053"
-//   }
-// }
 
 const resolvers = {
   Date: dateScalar,
-  Query: {...apiResolvers},
-  Mutation: {...dbResolvers}
+  Query: { ...apiResolvers },
+  Mutation: { ...dbResolvers }
 }
 
-const query = `
-  mutation {
-    populateDailyCron
-  }
-`
-
-// Below is every minute for testing
-const cronExpression = '* * * * *'
-
-// Below is every five minutes for testing
-// const cronExpression = '*/5 * * * *'
-
-// Below is every 24 hours at midnight for production
-// const cronExpression = '0 0 * * *'
-
-// cron.schedule(cronExpression, () => request('http://localhost:4000', query))
+// startCron()
 
 const server = new ApolloServer({ typeDefs, resolvers })
 

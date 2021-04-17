@@ -2,6 +2,11 @@
   "conventionalCommits.scopes": [
     "GraphQL",
     "postgres",
-    "README"
-  ]
+    "README",
+    "Linting"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "eslint.validate": ["javascript"]
 }
