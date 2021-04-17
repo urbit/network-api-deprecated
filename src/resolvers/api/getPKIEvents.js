@@ -1,11 +1,9 @@
 const format = require('pg-format')
 
-const { query, connect, end } = require('../utils')
+const { query } = require('../utils')
 
 const getPKIEvents = async (_, args) => {
   const { urbitId, since, nodeTypes, limit, offset } = args.input
-
-  await connect()
 
   const acceptablePointNameLengths = []
 
@@ -58,7 +56,6 @@ const getPKIEvents = async (_, args) => {
   queryString += ';'
 
   await query(queryString)
-  await end()
 }
 
 module.exports = { getPKIEvents }

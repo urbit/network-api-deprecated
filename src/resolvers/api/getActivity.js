@@ -1,16 +1,12 @@
 const format = require('pg-format')
 const _get = require('lodash.get')
 
-const { query, connect, end } = require('../utils')
+const { query } = require('../utils')
 
 const getActivity = async (_, args) => {
-  let { urbitId, since, until } = args.input
-
-  if (!urbitId) {
-    urbitId = null
-  }
-
-  await connect()
+  const urbitId = _get(args, 'input.urbitId') || null
+  const since = _get(args, 'input.since') || null
+  const until = _get(args, 'input.until') || null
 
   let queryString
 
@@ -41,15 +37,15 @@ const getActivity = async (_, args) => {
 
   const getActivityResponse = await query(queryString)
 
-  await end()
-
   const returnArr = []
   const responseDates = []
 
-  if (getActivityResponse.rows.length > 0) {
-    for (const i in getActivityResponse.rows) {
-      const online = _get(getActivityResponse.rows[i], 'online') || false
-      let response_time = _get(getActivityResponse.rows[i], 'response_time') || null
+  const rows = _get(getActivityResponse, 'rows') || []
+
+  if (rows.length > 0) {
+    for (const i in rows) {
+      const online = _get(rows, `[${i}].online`) || false
+      let response_time = _get(rows, `[${i}].response_time`) || null
       if (response_time) {
         response_time = response_time.toISOString().split('T', 1)[0]
       }

@@ -1,11 +1,9 @@
 const _get = require('lodash.get')
 
-const { query, connect, end } = require('../utils')
+const { query } = require('../utils')
 
 const getNode = async (_, args) => {
-  const { urbitId } = args.input
-
-  await connect()
+  const { urbitId } = _get(args, 'input.urbitId') || null
 
   let nodeType = null
 
@@ -27,15 +25,17 @@ const getNode = async (_, args) => {
   // sponsor
   const getSponsorQuery = `select sponsor_id from pki_events where node_id = '${urbitId}' order by time desc limit 1;`
   const getSponsorResponse = await query(getSponsorQuery)
+  const getSponsorResponseRow = _get(getSponsorResponse, 'rows[0]') || []
 
-  const sponsor = getSponsorResponse.rows[0] ? getSponsorResponse.rows[0].sponsor_id : null
+  const sponsor = getSponsorResponseRow ? _get(getSponsorResponseRow, 'sponsor_id') || null : null
 
   sponsors.push(sponsor)
 
   // sponsor's sponsor
   const getSponsorsSponsorQuery = `select sponsor_id from pki_events where node_id = '${sponsor}' order by time desc limit 1;`
   const getSponsorsSponsorResponse = await query(getSponsorsSponsorQuery)
-  const sponsorsSponsor = getSponsorsSponsorResponse.rows[0] ? getSponsorsSponsorResponse.rows[0].sponsor_id : null
+  const getSponsorsSponsorResponseRow = _get(getSponsorsSponsorResponse, 'rows[0]') || []
+  const sponsorsSponsor = getSponsorsSponsorResponseRow ? _get(getSponsorsSponsorResponseRow, 'sponsor_id') || null : null
 
   if (sponsorsSponsor) {
     sponsors.push(sponsorsSponsor)
@@ -82,21 +82,25 @@ const getNode = async (_, args) => {
   // kids
   const getKidsQuery = `select distinct node_id from pki_events where sponsor_id = '${urbitId}';`
   const getKidsResponse = await query(getKidsQuery)
+  const getKidsResponseRows = _get(getKidsResponse, 'rows') || []
   const kids = []
 
-  for (const i in getKidsResponse.rows) {
-    kids.push(getKidsResponse.rows[i].node_id)
+  for (const i in getKidsResponseRows) {
+    const nodeId = _get(getKidsResponseRows, `[${i}].node_id`) || null
+    kids.push(nodeId)
   }
 
   // continuity number
   const getContinuityNumberQuery = `select continuity_number from pki_events where node_id = '${urbitId}' order by time desc limit 1;`
   const getContinuityNumberResponse = await query(getContinuityNumberQuery)
-  const continuityNumber = getContinuityNumberResponse.rows[0] ? getContinuityNumberResponse.rows[0].continuity_number : null
+  const getContinuityNumberResponseRow = _get(getContinuityNumberResponse, 'rows[0]') || []
+  const continuityNumber = getContinuityNumberResponseRow ? _get(getContinuityNumberResponseRow, 'continuity_number') || null : null
 
   // revision number
   const getRevisionNumberQuery = `select revision_number from pki_events where node_id = '${urbitId}' order by time desc limit 1;`
   const getRevisionNumberResponse = await query(getRevisionNumberQuery)
-  const revisionNumber = getRevisionNumberResponse.rows[0] ? getRevisionNumberResponse.rows[0].revision_number : null
+  const getRevisionNumberResponseRow = _get(getRevisionNumberResponse, 'rows[0]') || []
+  const revisionNumber = getRevisionNumberResponseRow ? _get(getRevisionNumberResponseRow, 'revision_number') || null : null
 
   // ownership proxy
   const getOwnershipProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = '1' order by time desc limit 1;`
@@ -122,8 +126,6 @@ const getNode = async (_, args) => {
   const getVotingProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = '5' order by time desc limit 1;`
   const getVotingProxyResponse = await query(getVotingProxyQuery)
   const votingProxy = _get(getVotingProxyResponse, 'rows[0].address') || 'no_address'
-
-  await end()
 
   return {
     urbitId,

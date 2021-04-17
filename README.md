@@ -3,6 +3,10 @@
 
 Commits to this repo follow [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) format. A settings file for [VSCode](https://code.visualstudio.com/) users is also included.
 
+## Node Server
+
+Run `yarn` to install all packages, then start the server with `yarn run start`.
+
 ## Postgres Database
 
 If using MacOS, install Postgres via Homebrew with `brew install postgresql`, then start it as a daemon with `brew services start postgresql`. You should now have a Postgres server running on port 5432. If not on MacOS, descriptions of other methods of installing and running a local Postgres database are easily available online.
@@ -14,10 +18,6 @@ mutation {
   populateAll
 }
 ```
-
-## Node Server
-
-Run `yarn` to install all packages, then start the server with `nodemon index.js`.
 
 ## API
 

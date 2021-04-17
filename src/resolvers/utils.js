@@ -3,33 +3,37 @@ const https         = require('https')
 const axios         = require('axios')
 const _get          = require('lodash.get')
 
-const client        = new Client()
-
 const query = async qs => {
-  try {
-    await client.query(qs)
-  } catch (error) {
-    throw error
-  }
-}
 
-const connect = async () => {
+  // console.log(`query string being sent to postgres: ${qs}`)
+
+  const client = new Client()
+
   try {
     await client.connect()
   } catch (error) {
     throw error
   }
-}
 
-const end = async () => {
+  let queryResponse
+
   try {
-    client.end()
+    queryResponse = await client.query(qs)
   } catch (error) {
     throw error
   }
+
+  try {
+    await client.end()
+  } catch (error) {
+    throw error
+  }
+
+  return queryResponse
 }
 
 const axiosGet = async endpoint => {
+  console.log(`running axiosGet with this endpoint: ${endpoint}`)
   const agent = new https.Agent({  
     rejectUnauthorized: false
    })
@@ -42,4 +46,4 @@ const axiosGet = async endpoint => {
   }
 }
 
-module.exports { query, connect, end, axiosGet }
+module.exports = { query, axiosGet }

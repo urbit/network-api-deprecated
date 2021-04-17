@@ -1,11 +1,11 @@
 const format = require('pg-format')
 const _get = require('lodash.get')
 
-const { query, connect, end } = require('../../utils')
+const { query } = require('../../utils')
 
 // Later change this to just update the DB instead of delete and replace
 const addToDB = async (tableName, getDataResponse) => {
-  await connect()
+  console.log(`running addToDB with this tableName: ${tableName}`)
 
   const deleteTableQuery = format('DROP TABLE IF EXISTS %I;', tableName)
   await query(deleteTableQuery)
@@ -113,10 +113,10 @@ const addToDB = async (tableName, getDataResponse) => {
     }
 
     // Can use the following line for testing when needed:
-    // for (let i = 0; i < 1000; i++) {
+    // for (let i = 0; i < 400; i++) {
     for (const i in getDataResponse) {
       if (i % 200 === 0) {
-        console.log(`i: ${i}`)
+        console.log(`iterator in addToDB: ${i}`)
       }
 
       if (i > 0) {
@@ -162,16 +162,22 @@ const addToDB = async (tableName, getDataResponse) => {
 
       insertQuery += format(' (\'%s\', \'%s\', %L, \'%s\', \'%s\', %L, %L)', node_id, event_type, time, sponsor_id, address, continuity_number, revision_number)
     }
+    console.log('just past iterator in addToDB')
     insertQuery += ';'
   } else if (tableName === 'raw_events') {
     insertQuery = format('INSERT INTO %I (%s, %s, %s, %s, %s, %s) VALUES', tableName, 'DATE', 'POINT', 'EVENT', 'FIELD1', 'FIELD2', 'FIELD3')
     for (const i in getDataResponse) {
-      const [date, point, event] = getDataResponse[i]
+      const item = _get(getDataResponse, `[${i}]`) || null
+      if (!item) {
+        break
+      }
+
+      const [date, point, event] = item
       let field1
       let field2
       let field3
 
-      if (getDataResponse[i].length > 3 && getDataResponse[i][3] !== '') {
+      if (item.length > 3 && getDataResponse[i][3] !== '') {
         field1 = getDataResponse[i][3]
       } else {
         field1 = null
@@ -204,14 +210,20 @@ const addToDB = async (tableName, getDataResponse) => {
         insertQuery += ','
       }
 
-      if (getDataResponse[ships[i]].length === 0) {
+      const ship = _get(getDataResponse, `[${ships[i]}]`) || []
+
+      if (ship.length === 0) {
         insertQuery += format(' (\'%s\', %L, %L, %L)', ships[i] || null, null, null, null)
       } else {
-        for (const j in getDataResponse[ships[i]]) {
+        for (const j in ship) {
           if (j > 0) {
             insertQuery += ','
           }
-          insertQuery += format(' (\'%s\', \'%s\', \'%s\', \'%s\')', ships[i] || null, getDataResponse[ships[i]][j].ping || -1, getDataResponse[ships[i]][j].result || -1, getDataResponse[ships[i]][j].response || -1)
+          const shipName = _get(ships, `[${i}]`) || null
+          const ping = _get(ship, `[${j}].ping`) || -1
+          const result = _get(ship, `[${j}].result`) || -1
+          const response = _get(ship, `[${j}].response`) || -1
+          insertQuery += format(' (\'%s\', \'%s\', \'%s\', \'%s\')', shipName, ping, result, response)
         }
       }
     }
@@ -247,14 +259,11 @@ const addToDB = async (tableName, getDataResponse) => {
     insertQuery = format('INSERT INTO %I (%s) VALUES (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\');', tableName, 'STATUS_NAME', 'locked', 'unlocked', 'spawned', 'activated', 'online')
   } else if (tableName === 'event_type') {
     insertQuery = format('INSERT INTO %I (%s) VALUES (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\');', tableName, 'EVENT_NAME', 'change_ownership', 'change_spawn_proxy', 'change_transfer_proxy', 'change_management_proxy', 'change_voting_proxy', 'activate', 'spawn', 'escape_requested', 'escape_cancelled', 'escape_accepted', 'lost_sponsor', 'broke_continuity')
-    console.log('🚀 ~ file: db.js ~ line 212 ~ addToDB ~ insertQuery', insertQuery)
   } else if (tableName === 'node_type') {
     insertQuery = format('DROP TYPE node_type; CREATE TYPE %I AS ENUM (\'%s\' ,\'%s\' ,\'%s\', \'%s\', \'%s\');', tableName, 'galaxy', 'star', 'planet', 'comet', 'moon')
-    console.log('🚀 ~ file: db.js ~ line 212 ~ addToDB ~ insertQuery', insertQuery)
   }
 
-  await query(insertQuery)
-  await end()
+  return await query(insertQuery)
 }
 
 module.exports = { addToDB }

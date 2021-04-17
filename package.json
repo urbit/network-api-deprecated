@@ -6,6 +6,7 @@
   "author": "Christopher King <chris@cking.me>",
   "license": "MIT",
   "scripts": {
+    "start": "nodemon index.js",
     "eslint": "eslint index.js ./src/resolvers/**/*"
   },
   "dependencies": {

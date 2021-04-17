@@ -1,6 +1,6 @@
 const _get = require('lodash.get')
 
-const { query, connect, end } = require('../utils')
+const { query } = require('../utils')
 const { getNode } = require('./getNode')
 
 const getNodes = async (_, args) => {
@@ -9,22 +9,19 @@ const getNodes = async (_, args) => {
   const limit = _get(args, 'input.limit') || 0
   const offset = _get(args, 'input.offset') || 0
 
-  await connect()
-
   const pointNameQuery = `select * from raw_events where point like '${q}%';`
   const pointNameResponse = await query(pointNameQuery)
-
-  await end()
+  const pointNameResponseRows = _get(pointNameResponse, 'rows') || []
 
   let returnArr = []
-  if (pointNameResponse.rows.length === 0) {
+  if (pointNameResponseRows.length === 0) {
     return returnArr
   } else {
     console.log('in else')
     const potentialShips = []
-    for (const i in pointNameResponse.rows) {
-      console.log('🚀 ~ file: api.js ~ line 346 ~ getNodes ~ pointNameResponse.rows[i]', pointNameResponse.rows[i])
-      const point = pointNameResponse.rows[i].point
+    for (const i in pointNameResponseRows) {
+      console.log('🚀 ~ file: api.js ~ line 346 ~ getNodes ~ pointNameResponseRows[i]', pointNameResponseRows[i])
+      const point = _get(pointNameResponseRows, `[${i}].point`) || null
       if (!potentialShips.includes(point)) {
         potentialShips.push(point)
       }
