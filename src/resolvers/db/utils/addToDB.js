@@ -260,7 +260,7 @@ const addToDB = async (tableName, getDataResponse) => {
   } else if (tableName === 'event_type') {
     insertQuery = format('INSERT INTO %I (%s) VALUES (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\');', tableName, 'EVENT_NAME', 'change_ownership', 'change_spawn_proxy', 'change_transfer_proxy', 'change_management_proxy', 'change_voting_proxy', 'activate', 'spawn', 'escape_requested', 'escape_cancelled', 'escape_accepted', 'lost_sponsor', 'broke_continuity')
   } else if (tableName === 'node_type') {
-    insertQuery = format('DROP TYPE node_type; CREATE TYPE %I AS ENUM (\'%s\' ,\'%s\' ,\'%s\', \'%s\', \'%s\');', tableName, 'galaxy', 'star', 'planet', 'comet', 'moon')
+    insertQuery = format('DROP TYPE IF EXISTS node_type; CREATE TYPE %I AS ENUM (\'%s\' ,\'%s\' ,\'%s\', \'%s\', \'%s\');', tableName, 'galaxy', 'star', 'planet', 'comet', 'moon')
   }
 
   return await query(insertQuery)
