@@ -55,9 +55,8 @@ const getActivity = async (_, args) => {
         responseDates.push(response_time)
       }
     }
-  } else {
-    returnArr.push({ urbitId, active: false, date: null })
   }
+  
   return returnArr
 }
 

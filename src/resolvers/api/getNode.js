@@ -57,6 +57,10 @@ const getNode = async (_, args) => {
         getStatusIdResponse = await query(getStatusIdQuery)
 
         if (_get(getStatusIdResponse, 'rows[0].count') === '0') {
+
+          // If you want to know whether or not a specific star is *owned* by a lockup contract, you can check to see if its current owner is either of these two addresses:
+          // 0x86cd9cd0992f04231751e3761de45cecea5d1801 (linear lockup)
+          // 0x8c241098c3d3498fe1261421633fd57986d74aea (conditional lockup)
           getStatusIdQuery = `select count(*) from pki_events where node_id = '${urbitId}' and address = '0x86cd9cd0992f04231751e3761de45cecea5d1801' or address = '0x8c241098c3d3498fe1261421633fd57986d74aea';`
           getStatusIdResponse = await query(getStatusIdQuery)
 
@@ -83,12 +87,7 @@ const getNode = async (_, args) => {
   const getKidsQuery = `select distinct node_id from pki_events where sponsor_id = '${urbitId}';`
   const getKidsResponse = await query(getKidsQuery)
   const getKidsResponseRows = _get(getKidsResponse, 'rows') || []
-  const kids = []
-
-  for (const i in getKidsResponseRows) {
-    const nodeId = _get(getKidsResponseRows, `[${i}].node_id`) || null
-    kids.push(nodeId)
-  }
+  const kids = getKidsResponseRows.map(row => row.node_id })
 
   // continuity number
   const getContinuityNumberQuery = `select continuity_number from pki_events where node_id = '${urbitId}' order by time desc limit 1;`

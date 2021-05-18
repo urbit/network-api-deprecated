@@ -2,8 +2,8 @@ const { ApolloServer, gql } = require('apollo-server')
 const { GraphQLScalarType, Kind } = require('graphql')
 
 // const { startCron } = require('./src/cron')
-const dbResolvers = require('./src/resolvers/db/index')
-const apiResolvers = require('./src/resolvers/api/index')
+const dbResolvers = require('./src/resolvers/db')
+const apiResolvers = require('./src/resolvers/api')
 
 const typeDefs = gql`
 
@@ -70,12 +70,12 @@ const typeDefs = gql`
   }
   
   type Node {
-    urbitId: String
+    urbitId: String!
     numOwners: Int
     sponsors: [String]
     statusId: Int!
     kids: [String]
-    nodeType: NodeType
+    nodeType: NodeType!
     continuityNumber: Int
     revisionNumber: Int
     ownershipProxy: String
@@ -110,8 +110,8 @@ const typeDefs = gql`
 
   type Activity {
     urbitId: String
-    date: Date
-    active: Boolean
+    date: Date!
+    active: Boolean!
   }
   
   type Query {
