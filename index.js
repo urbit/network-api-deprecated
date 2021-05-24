@@ -24,7 +24,7 @@ const typeDefs = gql`
     # COMET
   }
 
-  enum EventName {
+  enum EventType {
     CHANGE_OWNERSHIP
     CHANGE_SPAWN_PROXY
     CHANGE_TRANSFER_PROXY
@@ -71,8 +71,8 @@ const typeDefs = gql`
   
   type Node {
     urbitId: String!
-    numOwners: Int
-    sponsors: [String]
+    numOwners: Int!
+    sponsors: [Node]
     statusId: Int!
     kids: [String]
     nodeType: NodeType!
@@ -95,21 +95,16 @@ const typeDefs = gql`
   type PKIEvent {
     eventId: Int!
     nodeId: String!
-    eventTypeId: Int!
-    sponsorId: String
+    type: EventType!
+    sponsor: Node
     time: Date!
     address: String
     continuityNumber: Int
     revisionNumber: Int
   }
 
-  type EventType {
-    eventType: Int!
-    eventName: EventName!
-  }
-
   type Activity {
-    urbitId: String
+    node: Node!
     date: Date!
     active: Boolean!
   }

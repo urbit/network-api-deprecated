@@ -38,21 +38,20 @@ const getActivity = async (_, args) => {
   const getActivityResponse = await query(queryString)
 
   const returnArr = []
-  const responseDates = []
+  const responseDates = {}
 
   const rows = _get(getActivityResponse, 'rows') || []
 
   if (rows.length > 0) {
-    for (const i in rows) {
-      const online = _get(rows, `[${i}].online`) || false
-      let response_time = _get(rows, `[${i}].response_time`) || null
-      if (response_time) {
-        response_time = response_time.toISOString().split('T', 1)[0]
+    rows.forEach(row => {
+      let { online = false , response_time: responseTime } = row
+      if (responseTime) {
+        responseTime = responseTime.toISOString().split('T', 1)[0]
       }
 
-      if (!responseDates.includes(response_time)) {
-        returnArr.push({ urbitId, active: online, date: response_time })
-        responseDates.push(response_time)
+      if (!responseDates[responseTime]) {
+        returnArr.push({ urbitId, active: online, date: responseTime })
+        responseDates[responseTime] = true
       }
     }
   }

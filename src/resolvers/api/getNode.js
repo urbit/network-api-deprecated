@@ -87,7 +87,7 @@ const getNode = async (_, args) => {
   const getKidsQuery = `select distinct node_id from pki_events where sponsor_id = '${urbitId}';`
   const getKidsResponse = await query(getKidsQuery)
   const getKidsResponseRows = _get(getKidsResponse, 'rows') || []
-  const kids = getKidsResponseRows.map(row => row.node_id })
+  const kids = getKidsResponseRows.map(row => row.node_id)
 
   // continuity number
   const getContinuityNumberQuery = `select continuity_number from pki_events where node_id = '${urbitId}' order by time desc limit 1;`
