@@ -9,11 +9,12 @@ const typeDefs = gql`
 
   scalar Date
 
-  enum StatusName {
+  enum NodeStatus {
     LOCKED
     UNLOCKED
     SPAWNED
     ACTIVATED
+    ONLINE
   }
 
   enum NodeType {
@@ -63,17 +64,12 @@ const typeDefs = gql`
     since: Date
     until: Date
   }
-
-  type NodeStatus {
-    nodeStatusId: Int!
-    statusName: StatusName!
-  }
   
   type Node {
     urbitId: String!
     numOwners: Int!
     sponsors: [Node]
-    statusId: Int!
+    status: NodeStatus!
     kids: [String]
     nodeType: NodeType!
     continuityNumber: Int
