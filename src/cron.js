@@ -16,6 +16,17 @@ const cronExpression = '* * * * *'
 // const cronExpression = '0 0 * * *'
 
 const startCron = () => {
+  let cronExpression
+  if (process.env.NODE_ENV === 'prod') {
+    // Every 24 hours at midnight for production
+    cronExpression = '0 0 * * *'
+  } else {
+    // Every minute for testing
+    // cronExpression = '* * * * *'
+
+    // Every five minutes for testing
+    cronExpression = '*/5 * * * *'
+  }
   cron.schedule(cronExpression, () => request('http://localhost:4000', cronQuery))
 }
 

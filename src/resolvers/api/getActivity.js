@@ -3,11 +3,8 @@ const _get = require('lodash.get')
 
 const { query } = require('../utils')
 
-const getActivity = async (_, args) => {
-  const urbitId = _get(args, 'input.urbitId') || null
-  const since = _get(args, 'input.since') || null
-  const until = _get(args, 'input.until') || null
-
+const getActivity = async (_, { input: { urbitId, since, until } }) => {
+  
   let queryString
 
   queryString = format('select * from %I', 'ping')

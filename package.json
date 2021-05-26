@@ -6,12 +6,14 @@
   "author": "Christopher King <chris@cking.me>",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon index.js",
+    "dev": "NODE_ENV=dev nodemon index.js",
+    "prod": "NODE_ENV=prod nodemon index.js",
     "eslint": "eslint index.js ./src/resolvers/**/*"
   },
   "dependencies": {
     "apollo-server": "^2.21.1",
     "axios": "^0.21.1",
+    "dotenv": "^10.0.0",
     "graphql": "^15.5.0",
     "graphql-request": "^3.4.0",
     "lodash.get": "^4.4.2",
