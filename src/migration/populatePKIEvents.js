@@ -13,4 +13,4 @@ const populatePKIEvents = async () => {
   return true
 }
 
-module.exports = { populatePKIEvents }
+populatePKIEvents()

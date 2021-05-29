@@ -13,4 +13,4 @@ const populatePing = async () => {
   return true
 }
 
-module.exports = { populatePing }
+populatePing()

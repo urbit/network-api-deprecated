@@ -16,4 +16,4 @@ const populateAll = async () => {
   await populatePKIEvents()
 }
 
-module.exports = { populateAll }
+populateAll()

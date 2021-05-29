@@ -7,4 +7,4 @@ const populateRadar = async () => {
   return true
 }
 
-module.exports = { populateRadar }
+populateRadar()

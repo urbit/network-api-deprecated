@@ -5,4 +5,4 @@ const populateEventType = async () => {
   return true
 }
 
-module.exports = { populateEventType }
+populateEventType()

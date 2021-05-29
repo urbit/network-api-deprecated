@@ -8,7 +8,16 @@
   "scripts": {
     "dev": "NODE_ENV=dev nodemon index.js",
     "prod": "NODE_ENV=prod nodemon index.js",
-    "eslint": "eslint index.js ./src/resolvers/**/*"
+    "eslint": "eslint index.js ./src/resolvers/**/*",
+    "populateAll": "node ./src/migration/populateAll",
+    "populateDailyCron": "node ./src/migration/populateDailyCron",
+    "populateEventType": "node ./src/migration/populateEventType",
+    "populateNodeStatus": "node ./src/migration/populateNodeStatus",
+    "populateNodeType": "node ./src/migration/populateNodeType",
+    "populatePing": "node ./src/migration/populatePing",
+    "populatePKIEvents": "node ./src/migration/populatePKIEvents",
+    "populateRadar": "node ./src/migration/populateRadar",
+    "populateRawEvents": "node ./src/migration/populateRawEvents"
   },
   "dependencies": {
     "apollo-server": "^2.21.1",

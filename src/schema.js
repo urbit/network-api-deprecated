@@ -1,5 +1,4 @@
 const { gql }                     = require('apollo-server')
-const dbResolvers                 = require('./src/resolvers/db')
 const apiResolvers                = require('./src/resolvers/api')
 const { GraphQLScalarType, Kind } = require('graphql')
 
@@ -109,18 +108,6 @@ const typeDefs = gql`
     getPKIEvents(input: PKIEventInput): [PKIEvent]
     getActivity(input: GetActivityInput): [Activity]
   }
-
-  type Mutation {
-    populateRadar: Boolean
-    populatePKIEvents: Boolean
-    populateRawEvents: Boolean
-    populatePing: Boolean
-    populateNodeStatus: Boolean
-    populateEventType: Boolean
-    populateNodeType: Boolean
-    populateAll: Boolean
-    populateDailyCron: Boolean
-  }
 `
 
 const dateScalar = new GraphQLScalarType({
@@ -139,8 +126,7 @@ const dateScalar = new GraphQLScalarType({
 
 const resolvers = {
   Date: dateScalar,
-  Query: { ...apiResolvers },
-  Mutation: { ...dbResolvers }
+  Query: { ...apiResolvers }
 }
 
 module.exports = { typeDefs, resolvers }

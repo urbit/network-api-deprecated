@@ -29,4 +29,4 @@ const populateRawEvents = async () => {
   return true
 }
 
-module.exports = { populateRawEvents }
+populateRawEvents()

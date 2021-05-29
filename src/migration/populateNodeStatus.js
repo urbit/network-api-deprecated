@@ -5,4 +5,4 @@ const populateNodeStatus = async () => {
   return true
 }
 
-module.exports = { populateNodeStatus }
+populateNodeStatus()
