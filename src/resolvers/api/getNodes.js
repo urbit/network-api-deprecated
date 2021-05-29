@@ -19,37 +19,37 @@ const getNodes = async (_, args) => {
   } else {
     console.log('in else')
     const potentialShips = []
-    for (const i in pointNameResponseRows) {
-      console.log('🚀 ~ file: api.js ~ line 346 ~ getNodes ~ pointNameResponseRows[i]', pointNameResponseRows[i])
-      const point = _get(pointNameResponseRows, `[${i}].point`) || null
+
+    pointNameResponseRows.forEach(row => {
+      const { point } = row
       if (!potentialShips.includes(point)) {
         potentialShips.push(point)
       }
-    }
+    })
 
     console.log('🚀 ~ file: api.js ~ line 355 ~ getNodes ~ potentialShips', potentialShips)
 
-    for (const i in potentialShips) {
+    potentialShips.forEach(ship => {
       if (nodeTypes.length > 0) {
         if (!nodeTypes.includes('GALAXY')) {
-          if (potentialShips[i].length === 4) {
-            continue
+          if (ship.length === 4) {
+            return
           }
         } else if (!nodeTypes.includes('STAR')) {
-          if (potentialShips[i].length === 7) {
-            continue
+          if (ship.length === 7) {
+            return
           }
         } else if (!nodeTypes.includes('PLANET')) {
-          if (potentialShips[i].length === 14) {
-            continue
+          if (ship.length === 14) {
+            return
           }
         }
       }
 
-      const node = await getNode(_, { input: { urbitId: potentialShips[i] } })
+      const node = await getNode(_, { input: { urbitId: ship } })
 
       returnArr.push(node)
-    }
+    })
 
     for (let i = offset; i > 0; i--) {
       returnArr = returnArr.slice(1)

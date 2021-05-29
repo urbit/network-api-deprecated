@@ -41,7 +41,7 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
 
   if (rows.length > 0) {
     rows.forEach(row => {
-      let { online = false , response_time: responseTime } = row
+      const { online = false , response_time: responseTime } = row
       if (responseTime) {
         responseTime = responseTime.toISOString().split('T', 1)[0]
       }

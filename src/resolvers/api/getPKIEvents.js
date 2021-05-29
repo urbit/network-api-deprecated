@@ -32,12 +32,12 @@ const getPKIEvents = async (_, args) => {
       queryString += format(' length(%s)=%s', 'node_id', acceptablePointNameLengths[0])
     } else {
       queryString += ' ('
-      for (const i in acceptablePointNameLengths) {
-        queryString += format('length(%s)=%s', 'node_id', acceptablePointNameLengths[i])
+      acceptablePointNameLengths.forEach(length => {
+        queryString += format('length(%s)=%s', 'node_id', length)
         if (parseInt(i) !== acceptablePointNameLengths.length - 1) {
           queryString += ' or '
         }
-      }
+      })
       queryString += ')'
     }
   }

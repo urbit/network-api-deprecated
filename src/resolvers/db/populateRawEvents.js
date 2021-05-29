@@ -8,9 +8,9 @@ const populateRawEvents = async () => {
 
   const returnArr = []
 
-  for (const i in events) {
-    const splitString = events[i]
-    const splitStringArray = splitString.split(',')
+  events.forEach(event => {
+    const event = events[i]
+    const splitStringArray = event.split(',')
 
     const newArr = splitStringArray.map(x => {
       if (x === '') {
@@ -22,7 +22,7 @@ const populateRawEvents = async () => {
 
     newArr[0] = convertDateToISO(newArr[0])
     returnArr.push(newArr)
-  }
+  })
 
   await addToDB('raw_events', returnArr)
 
