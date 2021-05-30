@@ -9,7 +9,6 @@ const populateRawEvents = async () => {
   const returnArr = []
 
   events.forEach(event => {
-    const event = events[i]
     const splitStringArray = event.split(',')
 
     const newArr = splitStringArray.map(x => {

@@ -113,8 +113,8 @@ const addToDB = async (tableName, getDataResponse) => {
     }
 
     // Can use the following line for testing when needed:
-    // for (let i = 0; i < 400; i++) {
-    for (let i = 0; i < getDataResponse.length; i++) {
+    for (let i = 0; i < 400; i++) {
+    // for (let i = 0; i < getDataResponse.length; i++) {
       if (i % 200 === 0) {
         console.log(`iterator in addToDB: ${i}`)
       }
@@ -166,7 +166,8 @@ const addToDB = async (tableName, getDataResponse) => {
     insertQuery += ';'
   } else if (tableName === 'raw_events') {
     insertQuery = format('INSERT INTO %I (%s, %s, %s, %s, %s, %s) VALUES', tableName, 'DATE', 'POINT', 'EVENT', 'FIELD1', 'FIELD2', 'FIELD3')
-    getDataResponse.forEach(item => {
+    
+    getDataResponse.forEach((item, index) => {
 
       const [date, point, event] = item
       let field1
@@ -189,7 +190,7 @@ const addToDB = async (tableName, getDataResponse) => {
         field3 = null
       }
 
-      if (i > 0) {
+      if (index > 0) {
         insertQuery += ','
       }
 
@@ -201,7 +202,7 @@ const addToDB = async (tableName, getDataResponse) => {
     insertQuery = format('INSERT INTO %I (%s, %s, %s, %s) VALUES', tableName, 'SHIP_NAME', 'PING', 'RESULT', 'RESPONSE')
     const ships = Object.keys(getDataResponse)
 
-    ships.forEach((shipKey, index) => {
+    ships.forEach((ship, index) => {
 
       if (index > 0) {
         insertQuery += ','

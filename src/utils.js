@@ -46,11 +46,10 @@ const axiosGet = async endpoint => {
   }
 }
 
-const getNodeStatus = urbitId => {
+const getNodeStatus = async urbitId => {
 
   try {
     let status = await query(`select count(result) from radar where ship_name = '${urbitId}';`)
-
     if (_get(status, 'rows[0].count') !== '0') {
       return 'ONLINE'
     }

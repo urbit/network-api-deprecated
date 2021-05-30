@@ -1,5 +1,21 @@
 exports.up = pgm => {
+  pgm.createType('status_names', ['locked', 'unlocked', 'spawned', 'activated', 'online'])
   pgm.createType('node_type', ['galaxy', 'star', 'planet', 'moon', 'comet'])
+  pgm.createType('event_names', 
+    [
+      'change_ownership', 
+      'change_spawn_proxy',
+      'change_transfer_proxy',
+      'change_management_proxy',
+      'change_voting_proxy',
+      'activate',
+      'spawn',
+      'escape_requested',
+      'escape_cancelled',
+      'escape_accepted',
+      'lost_sponsor',
+      'broke_continuity'
+    ])
 
   pgm.createTable('pki_events', {
     event_id: {
@@ -110,4 +126,12 @@ exports.up = pgm => {
       notNull: true
     }
   })
+
+  // TODO: write materialized view query between ticks below
+  // pgm.createMaterializedView('node', 
+  //   {}, 
+  //   `
+      
+  //   `
+  // )
 }
