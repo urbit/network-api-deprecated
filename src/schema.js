@@ -4,8 +4,16 @@ const { GraphQLScalarType, Kind } = require('graphql')
 
 const typeDefs = gql`
 
+  """
+  A custom Date scalar must be defined in order to parse the PKI event log in a manner congenial to SQL, which is the database used in this project.
+  """
   scalar Date
 
+  """
+  A Node may technically have more than one status.
+  For example, UNLOCKED Nodes are also SPAWNED Nodes.
+  However, since a particular status always implies the same additional statuses, the closest status in functionality to ONLINE will be used.
+  """
   enum NodeStatus {
     LOCKED
     UNLOCKED
@@ -14,6 +22,10 @@ const typeDefs = gql`
     ONLINE
   }
 
+  """
+  Currently, there is no way to track MOONs' and COMETs' status on the network.
+  This will likely change in the future, so they are left for now, commented-out.
+  """
   enum NodeType {
     GALAXY
     STAR
@@ -22,6 +34,9 @@ const typeDefs = gql`
     # COMET
   }
 
+  """
+  All PKI events should map to one of the following EventTypes.
+  """
   enum EventType {
     CHANGE_OWNERSHIP
     CHANGE_SPAWN_PROXY
@@ -42,6 +57,9 @@ const typeDefs = gql`
   }
 
   input GetNodesInput {
+    """
+    Query string for searching for Node[s]
+    """
     q: String
     nodeTypes: [NodeType]
     limit: Int
@@ -62,6 +80,9 @@ const typeDefs = gql`
     until: Date
   }
   
+  """
+  A Node is an Urbit ship.
+  """
   type Node {
     urbitId: String!
     numOwners: Int!
@@ -78,6 +99,9 @@ const typeDefs = gql`
     votingProxy: String
   }
 
+  """
+  A Ping represents a response from an Urbit ship as described by the Radar endpoint.
+  """
   type Ping {
     pingId: Int!
     nodeId: String!
@@ -85,6 +109,10 @@ const typeDefs = gql`
     time: Date!
   }
 
+  """
+  A PKIEvent is an Urbit-network-defining event on the Ethereum blockchain.
+  The collection of all PKIEvents allows a full reconstruction of the network's current state.
+  """
   type PKIEvent {
     eventId: Int!
     nodeId: String!
@@ -96,6 +124,10 @@ const typeDefs = gql`
     revisionNumber: Int
   }
 
+  """
+  The Activity type merely denotes whether a Node is online at a particular time, as described by Radar data.
+  It does not describe any type of specific activity.
+  """
   type Activity {
     node: Node!
     date: Date!

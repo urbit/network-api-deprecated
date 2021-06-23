@@ -59,6 +59,7 @@ const getNodeStatus = async urbitId => {
     // 0x8c241098c3d3498fe1261421633fd57986d74aea (conditional lockup)
     status = await query(`select count(*) from pki_events where node_id = '${urbitId}' and address = '0x86cd9cd0992f04231751e3761de45cecea5d1801' or address = '0x8c241098c3d3498fe1261421633fd57986d74aea';`)
 
+    // probably should be unlocked
     if (_get(status, 'rows[0].count') !== '0') {
       return 'UNLOCKED'
     }
