@@ -12,16 +12,15 @@ const populatePing = async () => {
     console.log("🚀 ~ file: populatePing.js ~ line 28 ~ populatePing ~ error", error)
     throw error
   }
-  // console.log("🚀 ~ file: populatePing.js ~ line 9 ~ populatePing ~ radarQueryResponse", radarQueryResponse)
+
   const getDataResponse = _get(radarQueryResponse, 'rows') || []
-  // console.log("🚀 ~ file: populatePing.js ~ line 11 ~ populatePing ~ getDataResponse", getDataResponse)
 
   if (getDataResponse.length === 0) {
-    // console.log('inside if in populatePing')
     return
   }
 
   insertQuery = format('INSERT INTO %I (%s, %s, %s, %s) VALUES', 'ping', 'NODE_ID', 'ONLINE', 'PING_TIME', 'RESPONSE_TIME')
+  
   getDataResponse.forEach((item, index) => {
     const { ship_name, ping, response } = item
     if (index > 0) {

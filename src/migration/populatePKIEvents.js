@@ -30,16 +30,12 @@ const populatePKIEvents = async () => {
     breached: 12
   }
 
-  console.log("🚀 ~ file: populatePKIEvents.js ~ line 36 ~ populatePKIEvents ~ getDataResponse.length", getDataResponse.length)
-
   // Can use the following line for testing when needed:
   for (let i = 0; i < 200; i++) {
   // for (let i = 0; i < getDataResponse.length; i++) {
-    // console.log("🚀 ~ file: populatePKIEvents.js ~ line 36 ~ populatePKIEvents ~ getDataResponse.length", getDataResponse.length)
-    if (i % 100 === 0) {
-      console.log(`iterator in populatePKIEvents: ${i}`)
-      // console.log(`getDataResponse[i]: ${getDataResponse[i]}`)
-    }
+    // if (i % 100 === 0) {
+    //   console.log(`iterator in populatePKIEvents: ${i}`)
+    // }
 
     if (i > 0) {
       insertQuery += ','
