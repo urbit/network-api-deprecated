@@ -1,8 +1,13 @@
-const { addToDB } = require('./utils/addToDB')
+const format = require('pg-format')
+const { query } = require('../utils')
 
 const populateNodeStatus = async () => {
-  await addToDB('node_status', null)
-  return true
+  try {
+    return await query(format('INSERT INTO %I (%s) VALUES (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\'), (\'%s\');', 'node_status', 'STATUS_NAME', 'locked', 'unlocked', 'spawned', 'activated', 'online'))
+  } catch (error) {
+    console.log("🚀 ~ file: populateNodeStatus.js ~ line 9 ~ populateNodeStatus ~ error", error) 
+    throw error
+  }
 }
 
-populateNodeStatus()
+module.exports = { populateNodeStatus }

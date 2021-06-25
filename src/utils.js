@@ -39,7 +39,7 @@ const axiosGet = async endpoint => {
    })
 
    try {
-    const response = await axios.get(endpoint, { httpsAgent: agent })
+    const response = await axios.get(endpoint, { httpsAgent: agent, timeout: 10000 })
     return _get(response, 'data') || null
   } catch (error) {
     throw error

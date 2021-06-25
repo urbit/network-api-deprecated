@@ -1,5 +1,5 @@
 const cron = require('node-cron')
-const populateDailyCron = require('./migration/populateDailyCron')
+const populateAll = require('./migration/populateAll')
 
 const startCron = () => {
   let cronExpression
@@ -15,7 +15,7 @@ const startCron = () => {
     // Every 5 minutes
     cronExpression = '*/5 * * * *'
   }
-  cron.schedule(cronExpression, () => populateDailyCron())
+  cron.schedule(cronExpression, () => populateAll())
 }
 
 module.exports = { startCron }
