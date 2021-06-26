@@ -33,7 +33,7 @@ const query = async qs => {
 }
 
 const axiosGet = async endpoint => {
-  // console.log(`running axiosGet with this endpoint: ${endpoint}`)
+  console.log(`running axiosGet with this endpoint: ${endpoint}`)
   const agent = new https.Agent({  
     rejectUnauthorized: false
    })

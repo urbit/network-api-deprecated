@@ -21,4 +21,7 @@ const populateAll = async () => {
   }
 }
 
-populateAll()
+if (process.env.POPULATE) {
+  console.log('running populateAll')
+  populateAll()
+}

@@ -130,7 +130,13 @@ exports.up = pgm => {
   pgm.createMaterializedView('node', 
     {}, 
     `
-    WITH sponsors AS (
+    WITH ships AS (
+      SELECT DISTINCT ON (node_id)
+        node_id
+      FROM
+        pki_events
+    ),
+    sponsors AS (
       SELECT DISTINCT ON (node_id)
         node_id,
         sponsor_id
@@ -139,12 +145,6 @@ exports.up = pgm => {
       ORDER BY
         node_id,
         TIME DESC
-    ),
-    ships AS (
-      SELECT DISTINCT ON (node_id)
-        node_id
-      FROM
-        pki_events
     ),
     num_owners AS (
       SELECT
@@ -188,6 +188,76 @@ exports.up = pgm => {
         node_id,
         time DESC
     ),
+    revision AS (
+      SELECT DISTINCT ON (node_id)
+        node_id,
+        revision_number
+      FROM
+        pki_events
+      ORDER BY
+        node_id,
+        time DESC
+    ),
+    ownership_proxy AS (
+      SELECT DISTINCT ON (node_id)
+      	node_id,
+        address AS ownership_proxy
+      FROM
+        pki_events
+      WHERE
+        event_type_id = '1' -- change_ownership
+      ORDER BY
+        node_id,
+        time DESC
+    ),
+    spawn_proxy AS (
+      SELECT DISTINCT ON (node_id)
+      	node_id,
+        address as spawn_proxy
+      FROM
+        pki_events
+      WHERE
+        event_type_id = '2' -- change_spawn_proxy 
+      ORDER BY
+        node_id,
+        time DESC
+    ),
+    transfer_proxy AS (
+      SELECT DISTINCT ON (node_id)
+      	node_id,
+        address as transfer_proxy
+      FROM
+        pki_events
+      WHERE
+        event_type_id = '3' -- change_transfer_proxy 
+      ORDER BY
+        node_id,
+        time DESC
+    ),
+    management_proxy AS (
+      SELECT DISTINCT ON (node_id)
+      	node_id,
+        address as management_proxy
+      FROM
+        pki_events
+      WHERE
+        event_type_id = '4' -- change_management_proxy 
+      ORDER BY
+        node_id,
+        time DESC
+    ),
+    voting_proxy AS (
+      SELECT DISTINCT ON (node_id)
+      	node_id,
+        address as voting_proxy
+      FROM
+        pki_events
+      WHERE
+        event_type_id = '5' -- change_voting_proxy 
+      ORDER BY
+        node_id,
+        time DESC
+    ),
     is_online AS (
       SELECT
         ship_name AS node_id,
@@ -211,22 +281,28 @@ exports.up = pgm => {
     ),
     node AS (
       SELECT
-          ships.node_id node_id,
+        ships.node_id node_id,
         ships.node_id sponsor_id,
         num_owners,
         activated_on,
         spawned_on,
         continuity_number,
+        revision_number,
+        ownership_proxy,
+        spawn_proxy,
+        transfer_proxy,
+        management_proxy,
+        voting_proxy,
         (
           CASE WHEN is_online.num_pings IS NOT NULL
             AND is_online.num_pings > 0 THEN
-            5 -- online
+            'ONLINE' -- node status id 5
           WHEN locked.num_locked IS NOT NULL
             AND locked.num_locked > 0 THEN
-            1 -- locked
+            'LOCKED' -- node status id 1
           ELSE
-            2 -- unlocked
-          END) AS status_id
+            'UNLOCKED' -- node status id 1
+          END) AS status
       FROM
         ships AS ships
       LEFT JOIN sponsors ON ships.node_id = sponsors.node_id
@@ -234,6 +310,12 @@ exports.up = pgm => {
       LEFT JOIN activated ON ships.node_id = activated.node_id
       LEFT JOIN spawned ON ships.node_id = spawned.node_id
       LEFT JOIN continuity ON ships.node_id = continuity.node_id
+      LEFT JOIN revision ON ships.node_id = revision.node_id
+      LEFT JOIN ownership_proxy ON ships.node_id = ownership_proxy.node_id
+      LEFT JOIN spawn_proxy ON ships.node_id = spawn_proxy.node_id
+      LEFT JOIN transfer_proxy ON ships.node_id = transfer_proxy.node_id
+      LEFT JOIN management_proxy ON ships.node_id = management_proxy.node_id
+      LEFT JOIN voting_proxy ON ships.node_id = voting_proxy.node_id
       LEFT JOIN is_online ON ships.node_id = is_online.node_id
       LEFT JOIN locked ON ships.node_id = locked.node_id
     )
