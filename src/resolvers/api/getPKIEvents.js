@@ -1,6 +1,6 @@
 const format = require('pg-format')
 
-const { query } = require('../utils')
+const { query } = require('../../utils')
 
 const getPKIEvents = async (_, args) => {
   const { urbitId, since, nodeTypes, limit, offset } = args.input

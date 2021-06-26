@@ -1,7 +1,7 @@
 const format = require('pg-format')
 const _get = require('lodash.get')
 
-const { query } = require('../utils')
+const { query } = require('../../utils')
 
 const getActivity = async (_, { input: { urbitId, since, until } }) => {
   
@@ -41,7 +41,7 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
 
   if (rows.length > 0) {
     rows.forEach(row => {
-      const { online = false , response_time: responseTime } = row
+      let { online = false , response_time: responseTime } = row
       if (responseTime) {
         responseTime = responseTime.toISOString().split('T', 1)[0]
       }
@@ -50,9 +50,10 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
         returnArr.push({ urbitId, active: online, date: responseTime })
         responseDates[responseTime] = true
       }
-    }
+    })
   }
   
+  console.log("🚀 ~ file: getActivity.js ~ line 58 ~ getActivity ~ returnArr", returnArr)
   return returnArr
 }
 

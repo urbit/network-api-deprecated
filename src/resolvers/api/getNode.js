@@ -1,6 +1,6 @@
 const _get = require('lodash.get')
 
-const { query, getNodeStatus } = require('../utils')
+const { query, getNodeStatus } = require('../../utils')
 
 const getNode = async (_, args) => {
   const { urbitId } = _get(args, 'input.urbitId') || null

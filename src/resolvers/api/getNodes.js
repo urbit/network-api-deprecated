@@ -1,6 +1,6 @@
 const _get = require('lodash.get')
 
-const { query } = require('../utils')
+const { query } = require('../../utils')
 const { getNode } = require('./getNode')
 
 const getNodes = async (_, args) => {
@@ -29,7 +29,7 @@ const getNodes = async (_, args) => {
 
     console.log('🚀 ~ file: api.js ~ line 355 ~ getNodes ~ potentialShips', potentialShips)
 
-    potentialShips.forEach(ship => {
+    potentialShips.forEach(async ship => {
       if (nodeTypes.length > 0) {
         if (!nodeTypes.includes('GALAXY')) {
           if (ship.length === 4) {

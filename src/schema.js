@@ -1,6 +1,11 @@
 const { gql }                     = require('apollo-server')
-const apiResolvers                = require('./src/resolvers/api')
+const apiResolvers                = require('./resolvers/api')
+const fieldResolvers              = require('./resolvers/field')
 const { GraphQLScalarType, Kind } = require('graphql')
+
+const {
+  node: nodeResolver
+} = fieldResolvers
 
 const typeDefs = gql`
 
@@ -104,7 +109,8 @@ const typeDefs = gql`
   """
   type Ping {
     pingId: Int!
-    nodeId: String!
+    # nodeId: String!
+    node: Node!
     online: Boolean!
     time: Date!
   }
@@ -129,7 +135,8 @@ const typeDefs = gql`
   It does not describe any type of specific activity.
   """
   type Activity {
-    node: Node!
+    # node: Node!
+    urbitId: String!
     date: Date!
     active: Boolean!
   }
@@ -158,7 +165,8 @@ const dateScalar = new GraphQLScalarType({
 
 const resolvers = {
   Date: dateScalar,
-  Query: { ...apiResolvers }
+  Query: { ...apiResolvers },
+  Node: nodeResolver
 }
 
 module.exports = { typeDefs, resolvers }
