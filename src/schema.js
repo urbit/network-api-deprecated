@@ -91,9 +91,9 @@ const typeDefs = gql`
   type Node {
     urbitId: String!
     numOwners: Int!
-    sponsors: [Node]
+    sponsor: Node
     status: NodeStatus!
-    kids: [String]
+    kids: [Node]
     nodeType: NodeType!
     continuityNumber: Int
     revisionNumber: Int
@@ -104,16 +104,16 @@ const typeDefs = gql`
     votingProxy: String
   }
 
-  """
-  A Ping represents a response from an Urbit ship as described by the Radar endpoint.
-  """
-  type Ping {
-    pingId: Int!
-    # nodeId: String!
-    node: Node!
-    online: Boolean!
-    time: Date!
-  }
+  # """
+  # A Ping represents a response from an Urbit ship as described by the Radar endpoint.
+  # """
+  # type Ping {
+  #   pingId: Int!
+  #   # nodeId: String!
+  #   node: Node!
+  #   online: Boolean!
+  #   time: Date!
+  # }
 
   """
   A PKIEvent is an Urbit-network-defining event on the Ethereum blockchain.
@@ -135,7 +135,6 @@ const typeDefs = gql`
   It does not describe any type of specific activity.
   """
   type Activity {
-    # node: Node!
     urbitId: String!
     date: Date!
     active: Boolean!

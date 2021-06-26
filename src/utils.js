@@ -64,13 +64,13 @@ const getNodeStatus = async urbitId => {
       return 'UNLOCKED'
     }
 
-    status = await query(`select count(*) from pki_events where node_id = '${urbitId}' and event_name = 'spawn';`)
+    status = await query(`select count(*) from pki_events where node_id = '${urbitId}' and event_type_id = 7;`)
     
     if (_get(status, 'rows[0].count') !== '0') {
       return 'SPAWNED'
     }
 
-    status = await query(`select count(*) from pki_events where node_id = '${urbitId}' and event_name = 'activate';`)
+    status = await query(`select count(*) from pki_events where node_id = '${urbitId}' and event_type_id = 6;`)
 
     if (_get(status, 'rows[0].count') !== '0') {
       return 'ACTIVATED'

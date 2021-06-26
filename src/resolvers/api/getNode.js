@@ -3,7 +3,9 @@ const _get = require('lodash.get')
 const { query, getNodeStatus } = require('../../utils')
 
 const getNode = async (_, args) => {
-  const { urbitId } = _get(args, 'input.urbitId') || null
+  console.log("🚀 ~ file: getNode.js ~ line 6 ~ getNode ~ args", args)
+  const urbitId = _get(args, 'input.urbitId') || null
+  console.log("🚀 ~ file: getNode.js ~ line 8 ~ getNode ~ urbitId", urbitId)
 
   let nodeType = null
 
@@ -15,31 +17,19 @@ const getNode = async (_, args) => {
     nodeType = 'PLANET'
   }
 
-  const getNumOwnersQuery = `select count(*) from pki_events where node_id = '${urbitId}' and event_name = 'change_ownership';`
+  // number of owners
+  const getNumOwnersQuery = `select count(*) from pki_events where node_id = '${urbitId}' and event_type_id = 1;`
   const getNumOwnersResponse = await query(getNumOwnersQuery)
 
   const numOwners = parseInt(_get(getNumOwnersResponse, 'rows[0].count')) || 1
-
-  const sponsors = []
 
   // sponsor
   const getSponsorQuery = `select sponsor_id from pki_events where node_id = '${urbitId}' order by time desc limit 1;`
   const getSponsorResponse = await query(getSponsorQuery)
   const getSponsorResponseRow = _get(getSponsorResponse, 'rows[0]') || []
-
+  console.log("🚀 ~ file: getNode.js ~ line 29 ~ getNode ~ getSponsorResponseRow", getSponsorResponseRow)
+  
   const sponsor = getSponsorResponseRow ? _get(getSponsorResponseRow, 'sponsor_id') || null : null
-
-  sponsors.push(sponsor)
-
-  // sponsor's sponsor
-  const getSponsorsSponsorQuery = `select sponsor_id from pki_events where node_id = '${sponsor}' order by time desc limit 1;`
-  const getSponsorsSponsorResponse = await query(getSponsorsSponsorQuery)
-  const getSponsorsSponsorResponseRow = _get(getSponsorsSponsorResponse, 'rows[0]') || []
-  const sponsorsSponsor = getSponsorsSponsorResponseRow ? _get(getSponsorsSponsorResponseRow, 'sponsor_id') || null : null
-
-  if (sponsorsSponsor) {
-    sponsors.push(sponsorsSponsor)
-  }
 
   // status
   const status = await getNodeStatus(urbitId)
@@ -63,27 +53,27 @@ const getNode = async (_, args) => {
   const revisionNumber = getRevisionNumberResponseRow ? _get(getRevisionNumberResponseRow, 'revision_number') || null : null
 
   // ownership proxy
-  const getOwnershipProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_name = 'change_ownership' order by time desc limit 1;`
+  const getOwnershipProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = 1 order by time desc limit 1;`
   const getOwnershipProxyResponse = await query(getOwnershipProxyQuery)
   const ownershipProxy = _get(getOwnershipProxyResponse, 'rows[0].address') || 'no_address'
 
   // spawn proxy
-  const getSpawnProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_name = 'change_spawn_proxy' order by time desc limit 1;`
+  const getSpawnProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = 2 order by time desc limit 1;`
   const getSpawnProxyResponse = await query(getSpawnProxyQuery)
   const spawnProxy = _get(getSpawnProxyResponse, 'rows[0].address') || 'no_address'
 
   // transfer proxy
-  const getTransferProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_name = 'change_transfer_proxy' order by time desc limit 1;`
+  const getTransferProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = 3 order by time desc limit 1;`
   const getTransferProxyResponse = await query(getTransferProxyQuery)
   const transferProxy = _get(getTransferProxyResponse, 'rows[0].address') || 'no_address'
 
   // management proxy
-  const getManagementProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_name = 'change_management_proxy' order by time desc limit 1;`
+  const getManagementProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = 4 order by time desc limit 1;`
   const getManagementProxyResponse = await query(getManagementProxyQuery)
   const managementProxy = _get(getManagementProxyResponse, 'rows[0].address') || 'no_address'
 
   // voting proxy
-  const getVotingProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_name = 'change_voting_proxy' order by time desc limit 1;`
+  const getVotingProxyQuery = `select address from pki_events where node_id = '${urbitId}' and event_type_id = 5 order by time desc limit 1;`
   const getVotingProxyResponse = await query(getVotingProxyQuery)
   const votingProxy = _get(getVotingProxyResponse, 'rows[0].address') || 'no_address'
 
@@ -91,7 +81,7 @@ const getNode = async (_, args) => {
     urbitId,
     nodeType,
     numOwners,
-    sponsors,
+    sponsor,
     status,
     kids,
     continuityNumber,

@@ -53,7 +53,6 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
     })
   }
   
-  console.log("🚀 ~ file: getActivity.js ~ line 58 ~ getActivity ~ returnArr", returnArr)
   return returnArr
 }
 
