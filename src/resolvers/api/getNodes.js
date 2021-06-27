@@ -9,13 +9,13 @@ const getNodes = async (_, args) => {
   const limit = _get(args, 'input.limit') || 0
   const offset = _get(args, 'input.offset') || 0
 
-  const pointNameQuery = `select * from raw_events where point like '${q}%';`
+  const pointNameQuery = `select * from raw_events where point like '${q}%' limit ${limit} offset ${offset};`
   const pointNameResponse = await query(pointNameQuery)
   const pointNameResponseRows = _get(pointNameResponse, 'rows') || []
 
-  let returnArr = []
+  let nodes = []
   if (pointNameResponseRows.length === 0) {
-    return returnArr
+    return nodes
   } else {
     console.log('in else')
     const potentialShips = []
@@ -26,8 +26,6 @@ const getNodes = async (_, args) => {
         potentialShips.push(point)
       }
     })
-
-    console.log('🚀 ~ file: api.js ~ line 355 ~ getNodes ~ potentialShips', potentialShips)
 
     potentialShips.forEach(async ship => {
       if (nodeTypes.length > 0) {
@@ -48,18 +46,10 @@ const getNodes = async (_, args) => {
 
       const node = await getNode(_, { input: { urbitId: ship } })
 
-      returnArr.push(node)
+      nodes.push(node)
     })
 
-    for (let i = offset; i > 0; i--) {
-      returnArr = returnArr.slice(1)
-    }
-
-    for (let i = limit; i > 0; i--) {
-      returnArr = returnArr.slice(0, limit)
-    }
-
-    return returnArr
+    return nodes
   }
 }
 

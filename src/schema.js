@@ -139,6 +139,10 @@ const typeDefs = gql`
     date: Date!
     active: Boolean!
   }
+
+  type Test {
+    thing: String
+  }
   
   type Query {
     getNode(input: GetNodeInput): Node
@@ -164,8 +168,7 @@ const dateScalar = new GraphQLScalarType({
 
 const resolvers = {
   Date: dateScalar,
-  Query: { ...apiResolvers },
-  Node: nodeResolver
+  Query: { ...apiResolvers }
 }
 
 module.exports = { typeDefs, resolvers }
