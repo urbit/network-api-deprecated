@@ -283,7 +283,12 @@ exports.up = pgm => {
         SELECT
           ships.node_id node_id,
           sponsor_id,
-          num_owners,
+          (
+          	CASE WHEN num_owners IS NULL
+          	 then 1
+          	ELSE num_owners
+          	END
+          ) as num_owners,
           activated_on,
           spawned_on,
           continuity_number,
