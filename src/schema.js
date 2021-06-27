@@ -123,10 +123,6 @@ const typeDefs = gql`
     date: Date!
     active: Boolean!
   }
-
-  type Test {
-    thing: String
-  }
   
   type Query {
     getNode(input: GetNodeInput): Node

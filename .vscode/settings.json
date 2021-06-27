@@ -3,7 +3,8 @@
     "GraphQL",
     "postgres",
     "README",
-    "Linting"
+    "Linting",
+    "Everywhere"
   ],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true

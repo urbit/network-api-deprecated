@@ -106,7 +106,7 @@ const populatePKIEvents = async () => {
       throw error
     }
 
-    const revision_number = revisionNumberResponse?.rows?.[0].field1 || 1
+    const revision_number = revisionNumberResponse?.rows?.[0]?.field1 || 1
 
     insertQuery += format(' (\'%s\', \'%s\', %L, \'%s\', \'%s\', %L, %L)', node_id, event_type_id, time, sponsor_id, address, continuity_number, revision_number)
   }
