@@ -1,5 +1,4 @@
 const format = require('pg-format')
-const _get = require('lodash.get')
 
 const { query } = require('../../utils')
 
@@ -8,9 +7,11 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
   let queryString
 
   queryString = format('select * from %I', 'ping')
+  
   if (since || until || urbitId) {
     queryString += ' where'
   }
+
   if (since) {
     queryString += format(' %I < \'%s\'', 'response_time', since)
   }
@@ -37,7 +38,7 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
   const returnArr = []
   const responseDates = {}
 
-  const rows = _get(getActivityResponse, 'rows') || []
+  const rows = getActivityResponse?.rows || []
 
   if (rows.length > 0) {
     rows.forEach(row => {

@@ -1,4 +1,3 @@
-const _get = require('lodash.get')
 const format = require('pg-format')
 
 const { query } = require('../utils')
@@ -13,7 +12,7 @@ const populatePing = async () => {
     throw error
   }
 
-  const getDataResponse = _get(radarQueryResponse, 'rows') || []
+  const getDataResponse = radarQueryResponse?.rows || []
 
   if (getDataResponse.length === 0) {
     return

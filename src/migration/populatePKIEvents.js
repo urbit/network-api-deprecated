@@ -1,4 +1,3 @@
-const _get = require('lodash.get')
 const format = require('pg-format')
 
 const { query } = require('../utils')
@@ -6,7 +5,7 @@ const { query } = require('../utils')
 const populatePKIEvents = async () => {
   const rawEventsQueryString = format('select * from %I;', 'raw_events')
   const rawEventsQueryResponse = await query(rawEventsQueryString)
-  const getDataResponse = _get(rawEventsQueryResponse, 'rows') || []
+  const getDataResponse = rawEventsQueryResponse?.rows || []
 
   insertQuery = format('INSERT INTO %I (%s, %s, %s, %s, %s, %s, %s) VALUES', 'pki_events', 'NODE_ID', 'EVENT_TYPE_ID', 'TIME', 'SPONSOR_ID', 'ADDRESS', 'CONTINUITY_NUMBER', 'REVISION_NUMBER')
 
@@ -46,7 +45,7 @@ const populatePKIEvents = async () => {
     const time = date
     const node_id = point
 
-    const event_type_id = _get(eventTypeKey, event) || 13
+    const event_type_id = eventTypeKey?.[event] || 13
 
     let sponsor_id = null
 
@@ -64,7 +63,7 @@ const populatePKIEvents = async () => {
       }
       
       if (latestEscapedToEventResponse.rows.length > 0) {
-        sponsor_id = _get(latestEscapedToEventResponse, 'rows[0].field2') || null
+        sponsor_id = latestEscapedToEventResponse?.rows?.[0]?.field2 || null
       } else if (node_id.length === 7) {
         sponsor_id = `~${node_id.slice(4)}`
       } else {
@@ -78,7 +77,7 @@ const populatePKIEvents = async () => {
           throw error
         }
 
-        sponsor_id = _get(spawnedEventResponse, 'rows[0].point') || null
+        sponsor_id = spawnedEventResponse?.rows?.[0]?.point|| null
       }
     }
 
@@ -95,7 +94,7 @@ const populatePKIEvents = async () => {
       throw error
     }
 
-    const continuity_number = _get(continuityNumberResponse, 'rows[0].field1') || 1
+    const continuity_number = continuityNumberResponse?.rows?.[0]?.field1 || 1
 
     const revisionNumberQuery = `select field1 from (select * from raw_events order by date desc limit ${i + 1}) as nested where point = '${node_id}' and event = 'keys' order by date desc limit 1;`
     
@@ -107,7 +106,7 @@ const populatePKIEvents = async () => {
       throw error
     }
 
-    const revision_number = _get(revisionNumberResponse, 'rows[0].field1') || 1
+    const revision_number = revisionNumberResponse?.rows?.[0].field1 || 1
 
     insertQuery += format(' (\'%s\', \'%s\', %L, \'%s\', \'%s\', %L, %L)', node_id, event_type_id, time, sponsor_id, address, continuity_number, revision_number)
   }
