@@ -58,4 +58,4 @@ const getPKIEvents = async (_, args) => {
   await query(queryString)
 }
 
-module.exports = { getPKIEvents }
+module.exports = getPKIEvents

@@ -56,4 +56,4 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
   return returnArr
 }
 
-module.exports = { getActivity }
+module.exports = getActivity

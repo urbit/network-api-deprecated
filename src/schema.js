@@ -1,11 +1,6 @@
 const { gql }                     = require('apollo-server')
 const apiResolvers                = require('./resolvers/api')
-const fieldResolvers              = require('./resolvers/field')
 const { GraphQLScalarType, Kind } = require('graphql')
-
-const {
-  node: nodeResolver
-} = fieldResolvers
 
 const typeDefs = gql`
 
@@ -103,17 +98,6 @@ const typeDefs = gql`
     managementProxy: String
     votingProxy: String
   }
-
-  # """
-  # A Ping represents a response from an Urbit ship as described by the Radar endpoint.
-  # """
-  # type Ping {
-  #   pingId: Int!
-  #   # nodeId: String!
-  #   node: Node!
-  #   online: Boolean!
-  #   time: Date!
-  # }
 
   """
   A PKIEvent is an Urbit-network-defining event on the Ethereum blockchain.
