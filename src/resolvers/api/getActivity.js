@@ -13,14 +13,14 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
   }
 
   if (since) {
-    queryString += format(' %I < \'%s\'', 'response_time', since)
+    queryString += format(' %I > \'%s\'', 'response_time', since)
   }
 
   if (until) {
     if (since) {
       queryString += ' and'
     }
-    queryString += format(' %I > \'%s\'', 'response_time', until)
+    queryString += format(' %I < \'%s\'', 'response_time', until)
   }
 
   if (urbitId) {
@@ -35,7 +35,7 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
 
   const getActivityResponse = await query(queryString)
 
-  const returnArr = []
+  const activityArr = []
   const responseDates = {}
 
   const rows = getActivityResponse?.rows || []
@@ -48,13 +48,14 @@ const getActivity = async (_, { input: { urbitId, since, until } }) => {
       }
 
       if (!responseDates[responseTime]) {
-        returnArr.push({ urbitId, active: online, date: responseTime })
+        activityArr.push({ urbitId: urbitId || row.node_id, active: online, date: responseTime || 'N/A' })
         responseDates[responseTime] = true
       }
     })
   }
   
-  return returnArr
+  return activityArr
 }
+  
 
 module.exports = getActivity
