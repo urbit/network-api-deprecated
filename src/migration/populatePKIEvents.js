@@ -30,7 +30,7 @@ const populatePKIEvents = async () => {
   }
 
   // Can use the following line for testing when needed:
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 600; i++) {
   // for (let i = 0; i < getDataResponse.length; i++) {
     // if (i % 100 === 0) {
     //   console.log(`iterator in populatePKIEvents: ${i}`)

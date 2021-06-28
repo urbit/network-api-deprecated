@@ -20,6 +20,7 @@ const typeDefs = gql`
     SPAWNED
     ACTIVATED
     ONLINE
+    NOTAVAILABLE
   }
 
   """
