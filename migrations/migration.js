@@ -324,10 +324,33 @@ exports.up = pgm => {
         LEFT JOIN is_online ON ships.node_id = is_online.node_id
         LEFT JOIN locked ON ships.node_id = locked.node_id
       ),
+      kids AS (
+        SELECT 
+          node_id,
+          sponsor_id,
+          coalesce((SELECT string_agg(t2.node_id,',')
+            FROM node_without_kids t2 
+            WHERE t1.node_id = t2.sponsor_id),'N/A') as kids
+        FROM node_without_kids t1
+      ),
       node AS (
-      	select node_without_kids.*,
-          array_agg(node_id) over (partition by sponsor_id) as kids
-      from node_without_kids
+      	SELECT 
+      		node_without_kids.node_id, 
+      		node_without_kids.sponsor_id, 
+      		node_without_kids.num_owners, 
+      		node_without_kids.activated_on, 
+      		node_without_kids.spawned_on, 
+      		node_without_kids.continuity_number, 
+      		node_without_kids.revision_number, 
+      		node_without_kids.ownership_proxy, 
+      		node_without_kids.spawn_proxy, 
+      		node_without_kids.transfer_proxy, 
+      		node_without_kids.management_proxy, 
+      		node_without_kids.voting_proxy, 
+      		node_without_kids.status, 
+      		kids.kids 
+      	FROM node_without_kids 
+      	LEFT JOIN kids ON node_without_kids.node_id = kids.node_id
       )
       SELECT
         *
