@@ -12,7 +12,7 @@
     "dev": "NODE_ENV=dev nodemon index.js",
     "prod": "NODE_ENV=prod nodemon index.js",
     "eslint": "eslint index.js ./src/resolvers/**/*",
-    "populateAll": "export POPULATE=true; node ./src/migration/populateAll",
+    "populateAll": "export POPULATE=true; NODE_ENV=dev node ./src/migration/populateAll",
     "populatePing": "node ./src/migration/populatePing",
     "populatePKIEvents": "node ./src/migration/populatePKIEvents",
     "populateRadar": "node ./src/migration/populateRadar",

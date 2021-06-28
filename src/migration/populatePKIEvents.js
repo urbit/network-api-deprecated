@@ -29,12 +29,17 @@ const populatePKIEvents = async () => {
     breached: 12
   }
 
-  // Can use the following line for testing when needed:
-  for (let i = 0; i < 600; i++) {
-  // for (let i = 0; i < getDataResponse.length; i++) {
-    // if (i % 100 === 0) {
-    //   console.log(`iterator in populatePKIEvents: ${i}`)
-    // }
+  let iteratorLimit
+  if (process.env.NODE_ENV === 'prod') {
+    iteratorLimit = getDataResponse.length
+  } else {
+    iteratorLimit = 600
+  }
+
+  for (let i = 0; i < iteratorLimit; i++) {
+    if (i % 100 === 0) {
+      console.log(`row in populatePKIEvents: ${i}`)
+    }
 
     if (i > 0) {
       insertQuery += ','
