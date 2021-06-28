@@ -326,11 +326,11 @@ exports.up = pgm => {
       ),
       kids AS (
         SELECT 
-          node_id,
+          node_id, 
           sponsor_id,
-          coalesce((SELECT string_agg(t2.node_id,',')
+          coalesce((SELECT array_agg(t2.node_id)
             FROM node_without_kids t2 
-            WHERE t1.node_id = t2.sponsor_id),'N/A') as kids
+            WHERE t1.node_id = t2.sponsor_id)) as kids
         FROM node_without_kids t1
       ),
       node AS (
