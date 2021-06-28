@@ -12,11 +12,13 @@
     "dev": "NODE_ENV=dev nodemon index.js",
     "prod": "NODE_ENV=prod nodemon index.js",
     "eslint": "eslint index.js ./src/resolvers/**/*",
-    "populateAll": "export POPULATE=true; NODE_ENV=dev node ./src/migration/populateAll",
+    "populateAllDev": "export POPULATE=true; NODE_ENV=dev node ./src/migration/populateAll",
     "populatePing": "node ./src/migration/populatePing",
-    "populatePKIEvents": "node ./src/migration/populatePKIEvents",
+    "populatePKIEventsDev": "NODE_ENV=dev node ./src/migration/populatePKIEvents",
     "populateRadar": "node ./src/migration/populateRadar",
-    "populateRawEvents": "node ./src/migration/populateRawEvents"
+    "populateRawEvents": "node ./src/migration/populateRawEvents",
+    "populateAllProd": "export POPULATE=true; NODE_ENV=prod node ./src/migration/populateAll",
+    "populatePKIEventsProd": "NODE_ENV=prod node ./src/migration/populatePKIEvents"
   },
   "dependencies": {
     "apollo-server": "^2.21.1",
