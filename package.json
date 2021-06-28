@@ -5,9 +5,38 @@
   "repository": "git@github.com:urbit/network-api.git",
   "author": "Christopher King <chris@cking.me>",
   "license": "MIT",
+  "scripts": {
+    "migrate": "./node_modules/.bin/node-pg-migrate",
+    "up": "DATABASE_URL=postgres://localhost:5432/christopherking ./node_modules/.bin/node-pg-migrate up",
+    "down": "DATABASE_URL=postgres://localhost:5432/christopherking ./node_modules/.bin/node-pg-migrate down",
+    "dev": "NODE_ENV=dev nodemon index.js",
+    "prod": "NODE_ENV=prod nodemon index.js",
+    "eslint": "eslint index.js ./src/resolvers/**/*",
+    "populateAllDev": "export POPULATE=true; NODE_ENV=dev node ./src/migration/populateAll",
+    "populatePing": "node ./src/migration/populatePing",
+    "populatePKIEventsDev": "NODE_ENV=dev node ./src/migration/populatePKIEvents",
+    "populateRadar": "node ./src/migration/populateRadar",
+    "populateRawEvents": "node ./src/migration/populateRawEvents",
+    "populateAllProd": "export POPULATE=true; NODE_ENV=prod node ./src/migration/populateAll",
+    "populatePKIEventsProd": "NODE_ENV=prod node ./src/migration/populatePKIEvents"
+  },
   "dependencies": {
     "apollo-server": "^2.21.1",
+    "axios": "^0.21.1",
+    "dotenv": "^10.0.0",
     "graphql": "^15.5.0",
-    "pg": "^8.5.1"
+    "graphql-request": "^3.4.0",
+    "node-cron": "^3.0.0",
+    "node-pg-migrate": "^5.9.0",
+    "pg": "^8.5.1",
+    "pg-format": "^1.0.4",
+    "ssl-root-cas": "^1.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^7.12.1",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1"
   }
 }

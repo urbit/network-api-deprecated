@@ -1,23 +1,9 @@
-const { ApolloServer, gql }   = require('apollo-server')
-const dbResolvers             = require('./db')
-const apiResolvers            = require('./api')
+const { ApolloServer }        = require('apollo-server')
+const { startCron }           = require('./src/cron')
+const { typeDefs, resolvers } = require('./src/schema')
 
-const typeDefs = gql`
-  type Query {
-    getDB: String
-    getNode: String
-    getNodes: [String]
-    getPKIEvents: [String]
-    getActivity: [String]
-  }
-`
+startCron()
 
-const resolvers = {
-  Query: {...dbResolvers, ...apiResolvers}
-}
+const server = new ApolloServer({ typeDefs, resolvers })
 
-const server = new ApolloServer({ typeDefs, resolvers });
-
-server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
-})
+server.listen().then(({ url }) => console.log(`🚀  Server ready at ${url}`))
