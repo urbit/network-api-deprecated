@@ -6,6 +6,8 @@ const typeDefs = gql`
 
   """
   A custom Date scalar must be defined in order to parse the PKI event log in a manner congenial to SQL, which is the database used in this project.
+  The timestamp must be a Unix timestamp in milliseconds.
+  Example: 1616172100909
   """
   scalar Date
 
@@ -51,6 +53,7 @@ const typeDefs = gql`
     ESCAPE_ACCEPTED
     LOST_SPONSOR
     BROKE_CONTINUITY
+    UNKNOWN
   }
 
   input GetNodeInput {
@@ -67,7 +70,7 @@ const typeDefs = gql`
     offset: Int
   }
 
-  input PKIEventInput {
+  input GetPKIEventsInput {
     urbitId: String
     since: Date
     nodeTypes: [NodeType]
@@ -82,7 +85,7 @@ const typeDefs = gql`
   }
   
   """
-  A Node is an Urbit ship.
+  A Node is an Urbit ship and is associated with a single Urbit ID.
   """
   type Node {
     urbitId: String!
@@ -128,7 +131,7 @@ const typeDefs = gql`
   type Query {
     getNode(input: GetNodeInput): Node
     getNodes(input: GetNodesInput): [Node]
-    getPKIEvents(input: PKIEventInput): [PKIEvent]
+    getPKIEvents(input: GetPKIEventsInput): [PKIEvent]
     getActivity(input: GetActivityInput): [Activity]
   }
 `

@@ -2,24 +2,43 @@ const format = require('pg-format')
 
 const { query } = require('../../utils')
 
+const eventTypeKey = {
+  1: 'CHANGE_OWNERSHIP',
+  2: 'CHANGE_SPAWN_PROXY',
+  3: 'CHANGE_TRANSFER_PROXY',
+  4: 'CHANGE_MANAGEMENT_PROXY',
+  5: 'CHANGE_VOTING_PROXY',
+  6: 'ACTIVATE',
+  7: 'SPAWN',
+  8: 'ESCAPE_REQUESTED',
+  9: 'ESCAPE_CANCELLED',
+  10: 'ESCAPE_ACCEPTED',
+  11: 'LOST_SPONSOR',
+  12: 'BROKE_CONTINUITY',
+  13: 'UNKNOWN'
+}
+
 const getPKIEvents = async (_, args) => {
   const { urbitId, since, nodeTypes, limit, offset } = args.input
 
   const acceptablePointNameLengths = []
 
-  if (nodeTypes.includes('PLANET')) {
+  if (nodeTypes && nodeTypes.includes('PLANET')) {
     acceptablePointNameLengths.push(14)
   }
-  if (nodeTypes.includes('STAR')) {
+  if (nodeTypes && nodeTypes.includes('STAR')) {
     acceptablePointNameLengths.push(7)
   }
-  if (nodeTypes.includes('GALAXY')) {
+  if (nodeTypes && nodeTypes.includes('GALAXY')) {
     acceptablePointNameLengths.push(4)
   }
 
   let queryString
 
-  queryString = format('select %s as "%s", %s as "%s", %s as "%s", %s, %s as "%s", %s, %s as "%s", %s as "%s" from %I where', 'event_id', 'eventId', 'node_id', 'nodeId', 'event_type_id', 'eventTypeId', 'time', 'sponsor_id', 'sponsorId', 'address', 'continuity_number', 'continuityNumber', 'revision_number', 'revisionNumber', 'pki_events')
+  queryString = format('select %s as "%s", %s as "%s", %s as "%s", %s, %s as "%s", %s, %s as "%s", %s as "%s" from %I', 'event_id', 'eventId', 'node_id', 'nodeId', 'event_type_id', 'eventTypeId', 'time', 'sponsor_id', 'sponsorId', 'address', 'continuity_number', 'continuityNumber', 'revision_number', 'revisionNumber', 'pki_events')
+  if (urbitId || nodeTypes || since) {
+    queryString += ' where'
+  }
   if (since) {
     queryString += format(' %I < \'%s\'', 'time', since)
   }
@@ -29,12 +48,16 @@ const getPKIEvents = async (_, args) => {
     }
 
     if (acceptablePointNameLengths.length === 1) {
+      if (!since) {
+        queryString += ' where'
+      }
       queryString += format(' length(%s)=%s', 'node_id', acceptablePointNameLengths[0])
     } else {
       queryString += ' ('
-      acceptablePointNameLengths.forEach(length => {
+
+      acceptablePointNameLengths.forEach((length, index) => {
         queryString += format('length(%s)=%s', 'node_id', length)
-        if (parseInt(i) !== acceptablePointNameLengths.length - 1) {
+        if (index !== acceptablePointNameLengths.length - 1) {
           queryString += ' or '
         }
       })
@@ -55,7 +78,19 @@ const getPKIEvents = async (_, args) => {
   }
   queryString += ';'
 
-  await query(queryString)
+  const response = await query(queryString)
+  let rows = response.rows
+  
+  rows.forEach(row => {
+    const { eventTypeId } = row
+    if (eventTypeId) {
+      row.type = eventTypeKey[eventTypeId]
+    } else {
+      row.type = 'UNKNOWN'
+    } 
+  })
+
+  return rows
 }
 
 module.exports = getPKIEvents

@@ -18,6 +18,7 @@ const query = async qs => {
 
   try {
     queryResponse = await client.query(qs)
+    // console.log("🚀 ~ file: utils.js ~ line 21 ~ queryResponse", queryResponse)
   } catch (error) {
     throw error
   }
